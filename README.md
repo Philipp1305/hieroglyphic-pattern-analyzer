@@ -18,4 +18,5 @@ An interdisciplinary project for analysing reoccuring sequences and patterns in 
 
 
 ## Acknowledgements
-This project was developed as part of the course "Projektseminar Informatik und Archäologie" at the Freie Universität Berlin and was initialized by Prof. Dr. Agnès Voisard and Prof. Dr. Mara Hubert. Contributors are Margot, Eren (CS), and Philipp Schmidt (CS).
+This project was developed as part of the course "Projektseminar Informatik und Archäologie" at the Freie Universität Berlin and was initialized by Prof. Dr. Agnès Voisard and Prof. Dr. Mara Hubert. Contributors are Margot Belot (Digital Humanities), Eren Kocadag(CS), and Philipp Schmidt (CS).
+    

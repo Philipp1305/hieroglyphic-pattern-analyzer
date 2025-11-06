@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
-with open('/Users/philippschmidt/Documents/ArcheoInfo/annotations.json', 'r') as file:
+with open('/Users/philippschmidt/Documents/hieroglyphic-pattern-analyzer/data/annotations.json', 'r') as file:
     annotations = json.load(file)
 
 # Normalize to a list of annotation dicts
@@ -72,9 +72,9 @@ reading_order = [code for code in reading_order if code.startswith('U+')]
 glyphs = [chr(int(code.replace('U+', ''), 16)) for code in reading_order]
 text = ''.join(glyphs)
 
-font_path = "/Users/philippschmidt/Documents/ArcheoInfo/NotoSansEgyptianHieroglyphs-Regular.ttf"
+font_path = "/Users/philippschmidt/Documents/hieroglyphic-pattern-analyzer/static/NotoSansEgyptianHieroglyphs-Regular.ttf"
 font_prop = FontProperties(fname=font_path, size=40)
 
-with open('/Users/philippschmidt/Documents/ArcheoInfo/translationorder.txt', 'w') as file:
+with open('/Users/philippschmidt/Documents/hieroglyphic-pattern-analyzer/translationorder.txt', 'w') as file:
     file.write(text)
 

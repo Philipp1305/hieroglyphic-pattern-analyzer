@@ -1,10 +1,18 @@
 import json
+from pathlib import Path, PosixPath
+from typing import cast
+
 import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 
-with open('/Users/philippschmidt/Documents/hieroglyphic-pattern-analyzer/data/annotations.json', 'r') as file:
+BASE_DIR = Path(__file__).resolve().parents[2]
+ANNOTATIONS_PATH = BASE_DIR / "data" / "annotations.json"
+FONT_PATH = cast(PosixPath, (BASE_DIR / "static" / "NotoSansEgyptianHieroglyphs-Regular.ttf"))
+TRANSLATION_PATH = BASE_DIR / "translationorder.txt"
+
+with open(ANNOTATIONS_PATH, 'r', encoding="utf-8") as file:
     annotations = json.load(file)
 
 # Normalize to a list of annotation dicts
@@ -72,9 +80,7 @@ reading_order = [code for code in reading_order if code.startswith('U+')]
 glyphs = [chr(int(code.replace('U+', ''), 16)) for code in reading_order]
 text = ''.join(glyphs)
 
-font_path = "/Users/philippschmidt/Documents/hieroglyphic-pattern-analyzer/static/NotoSansEgyptianHieroglyphs-Regular.ttf"
-font_prop = FontProperties(fname=font_path, size=40)
+font_prop = FontProperties(fname=FONT_PATH, size=40)
 
-with open('/Users/philippschmidt/Documents/hieroglyphic-pattern-analyzer/translationorder.txt', 'w') as file:
+with open(TRANSLATION_PATH, 'w', encoding="utf-8") as file:
     file.write(text)
-

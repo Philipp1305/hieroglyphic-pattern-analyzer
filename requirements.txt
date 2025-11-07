@@ -1,0 +1,4 @@
+numpy
+matplotlib
+psycopg2
+python-dotenv

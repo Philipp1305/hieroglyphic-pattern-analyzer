@@ -1,5 +1,5 @@
 from typing import Any, Sequence
-from connect import connect
+from database.connect import connect
 
 def run_update(query: str, params: Sequence[Any] | None = None) -> int:
     """

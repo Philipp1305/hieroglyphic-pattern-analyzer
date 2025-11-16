@@ -4,7 +4,9 @@ from typing import List
 from pathlib import Path
 
 
-df = pd.read_csv("/Users/philippschmidt/Documents/hieroglyphic-pattern-analyzer/sorted_glyphes.csv")
+BASE_DIR = Path(__file__).resolve().parent.parent
+data_path = BASE_DIR / "data" / "sorted_glyphes.csv"
+df = pd.read_csv(data_path)
 
 whole_sequence = df["gardiner_code"].astype(str).tolist()
 

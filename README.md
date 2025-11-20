@@ -24,6 +24,13 @@ pip install -r requirements.txt
 
 You need a database user to connect to our database. To do this, create an ``.env`` file in the ``src/database`` directory. You will find an ``.env.example`` file there. Copy its structure into your newly created ``.env`` file and replace the variables with the credentials you received.
 
+
+#### 4. Run the app
+
+```bash
+make run
+```
+
 ## Usage
 
 ## Acknowledgements

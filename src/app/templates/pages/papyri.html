@@ -1,0 +1,21 @@
+<div class="relative flex min-h-screen w-full flex-col">
+    {% include 'components/navbar.html' %}
+    <main class="flex-1">
+        <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+            <div class="flex flex-col gap-8">
+                <div
+                    class="rounded-xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-6 shadow-sm">
+                    <div class="flex flex-col gap-3">
+                        <p class="text-4xl font-black leading-tight tracking-[-0.033em]">Processed Papyri</p>
+                        <p
+                            class="text-base font-normal leading-normal text-text-secondary-light dark:text-text-secondary-dark">
+                            Browse the latest processed and pending papyri that have been ingested into GlyPat. Select a
+                            papyrus to view its processing history and annotation data.
+                        </p>
+                    </div>
+                </div>
+                {% include 'components/all_papyri.html' %}
+            </div>
+        </div>
+    </main>
+</div>

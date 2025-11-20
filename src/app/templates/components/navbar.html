@@ -1,0 +1,35 @@
+<header
+    class="sticky top-0 z-10 w-full border-b border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark/80 backdrop-blur-sm">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 py-3">
+        <a class="flex items-center gap-4" href="{{ url_for('home') }}">
+            <div class="size-8">
+                <!-- <img alt="GlyPat logo" class="h-full w-full object-contain"
+                    src="{{ url_for('static', filename='images/logo.png') }}" /> -->
+            </div>
+            <h2 class="text-2xl font-bold text-primary leading-tight tracking-[0.08em]"
+                style="font-family: 'Caesar Dressing', cursive;">
+                GlyPat</h2>
+        </a>
+        <div class="flex items-center gap-6 sm:gap-8">
+            {% set nav_link_base = "text-sm leading-normal transition-colors" %}
+            <a class="{{ nav_link_base }} {% if request.endpoint == 'papyri' %}font-bold text-primary{% else %}font-medium text-text-light dark:text-text-dark hover:text-primary{% endif %}"
+                href="{{ url_for('papyri') }}" {% if request.endpoint == 'papyri' %}aria-current="page" {% endif %}>All Papyri</a>
+            <a class="{{ nav_link_base }} {% if request.endpoint == 'database' %}font-bold text-primary{% else %}font-medium text-text-light dark:text-text-dark hover:text-primary{% endif %}"
+                href="{{ url_for('database') }}" {% if request.endpoint == 'database' %}aria-current="page" {% endif %}>Database</a>
+            <div class="flex items-center gap-3">
+                <a href="{{ url_for('upload') }}"
+                    class="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                <span class="material-symbols-outlined text-base font-semibold leading-none">add</span>
+                    Upload
+                </a>
+            <button id="themeToggle" type="button"
+                class="inline-flex items-center justify-center rounded-full border border-border-light dark:border-border-dark p-2 text-text-light dark:text-text-dark transition-colors hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                aria-pressed="false">
+                <span class="sr-only">Toggle color theme</span>
+                <span class="material-symbols-outlined text-xl leading-none dark:hidden">dark_mode</span>
+                <span class="material-symbols-outlined hidden text-xl leading-none dark:inline">light_mode</span>
+            </button>
+            </div>
+        </div>
+    </div>
+</header>

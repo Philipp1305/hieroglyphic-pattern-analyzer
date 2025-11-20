@@ -1,5 +1,5 @@
 from typing import Any, Sequence
-from database.connect import connect
+from src.database.connect import connect
 
 def run_insert(query: str, params: Sequence[Any] | None = None) -> int:
     """

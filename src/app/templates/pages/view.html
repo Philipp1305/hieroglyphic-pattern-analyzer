@@ -1,6 +1,6 @@
-<div class="flex min-h-screen flex-col bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark">
-<header class="w-full border-b border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark">
-    <div class="grid w-full grid-cols-3 items-center px-4 sm:px-6 lg:px-8 py-3">
+<div class="flex h-screen flex-col bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark">
+<header class="w-full border-b border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark h-16">
+    <div class="grid h-full w-full grid-cols-3 items-center px-4 sm:px-6 lg:px-8">
         <div class="flex justify-start">
             <a href="{{ url_for('papyri') }}"
                 class="inline-flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark px-4 py-2 text-sm font-semibold transition-colors hover:border-primary hover:text-primary">
@@ -23,7 +23,7 @@
         </div>
     </div>
 </header>
-<main class="flex-1 overflow-hidden">
+<main class="flex-1 overflow-hidden min-h-0">
 <div class="flex h-full">
 <!-- Left Panel: Pattern Display -->
 <aside class="w-[380px] flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50 flex flex-col">
@@ -73,7 +73,7 @@
 </div>
 <div class="text-right">
 <p class="text-xs text-gray-600 dark:text-gray-400">Occurrences</p>
-<p class="text-lg font-bold text-gray-900 dark:text-white">12</p>
+<p class="text-lg font-bold text-gray-900 dark:text-white">3</p>
 </div>
 </div>
 </div>
@@ -147,14 +147,35 @@
 <!-- Right Panel: Papyrus Viewer -->
 <section class="flex-1 bg-background-light dark:bg-background-dark p-4 flex flex-col">
 <div class="pb-3">
+<div class="flex items-center justify-between gap-4">
 <h2 class="text-xl font-bold text-gray-900 dark:text-white">Manuscript Viewer</h2>
+<div class="flex items-center gap-3 text-sm">
+<span class="text-text-secondary-light dark:text-text-secondary-dark">Highlight color:</span>
+<div class="flex items-center gap-2">
+<button type="button" class="color-swatch size-8 rounded-full border-2 border-emerald-400 bg-emerald-400/60 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    data-highlight-color="emerald" aria-pressed="true">
+    <span class="material-symbols-outlined text-base text-white highlight-check">done</span>
+</button>
+<button type="button" class="color-swatch size-8 rounded-full border-2 border-amber-400 bg-amber-400/60 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    data-highlight-color="amber" aria-pressed="false">
+    <span class="material-symbols-outlined text-base text-white highlight-check">done</span>
+</button>
+<button type="button" class="color-swatch size-8 rounded-full border-2 border-sky-400 bg-sky-400/60 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    data-highlight-color="sky" aria-pressed="false">
+    <span class="material-symbols-outlined text-base text-white highlight-check">done</span>
+</button>
+</div>
+</div>
+</div>
 </div>
 <div class="flex-1 bg-white dark:bg-gray-900 rounded-xl relative overflow-hidden shadow-inner">
-<div class="w-full h-full bg-center bg-no-repeat bg-cover" data-alt="High-resolution image of a papyrus manuscript" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDgbLpsUP1mZ5p2_QbPrlykdzbnd-up2n1Ejd6FKybIjQqc9sZ0Kw5U7Z0tUKyrkn5dJL30w66ryb2RmRJIz_5YPIiuRru3moDLT9f3APAgr-oILom_ydm8n-BRGEN3lRnrjJeZ5e8WfLTel42bD4YNMjOm7DjX9tmq9zSGH4cHfVYaMs__RDA6WIhdjzWI_j_XRtY6u9LY1uZvNhEGEtyVaZ1LafZPDY91wE1UjqJfhEwAsxZEsBoed3Gfdyoin0AG7ucupb16O70");'>
+<div class="w-full h-full bg-center bg-no-repeat bg-cover highlight-area"
+    data-highlight-area data-alt="High-resolution image of a papyrus manuscript"
+    style="background-image: url({{ url_for('static', filename='images/placeholder.jpg') }}); --highlight-color-bg: rgba(34, 197, 94, 0.45); --highlight-color-border: #22c55e;">
 <!-- Highlight Overlays would be dynamically rendered here. Example below. -->
-<div class="absolute top-[25%] left-[40%] w-[80px] h-[50px] bg-yellow-400/50 ring-2 ring-yellow-400 rounded-md animate-pulse"></div>
-<div class="absolute top-[50%] left-[60%] w-[80px] h-[50px] bg-yellow-400/50 ring-2 ring-yellow-400 rounded-md animate-pulse"></div>
-<div class="absolute top-[70%] left-[30%] w-[80px] h-[50px] bg-yellow-400/50 ring-2 ring-yellow-400 rounded-md animate-pulse"></div>
+<div class="absolute top-[60%] left-[40%] w-[20px] h-[50px] rounded-md animate-pulse" data-highlight-marker></div>
+<div class="absolute top-[48%] left-[71.5%] w-[20px] h-[50px] rounded-md animate-pulse" data-highlight-marker></div>
+<div class="absolute top-[70%] left-[33%] w-[20px] h-[50px] rounded-md animate-pulse" data-highlight-marker></div>
 </div>
 <div class="absolute bottom-4 right-4 flex flex-col gap-2">
 <button class="flex items-center justify-center size-10 rounded-full bg-gray-800/80 text-white hover:bg-gray-900/90 transition">

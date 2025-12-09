@@ -2,6 +2,18 @@
     {% include 'components/navbar.html' %}
     <main class="flex-1">
         <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+            <div data-upload-error
+                class="hidden mb-8 rounded-xl border border-red-300 bg-red-100/80 px-5 py-4 text-sm text-red-900 shadow-sm dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-100">
+                <div class="flex items-start gap-3">
+                    <span class="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-md bg-red-200 text-sm font-semibold text-red-800 dark:bg-red-900/60 dark:text-red-50">!</span>
+                    <div class="space-y-1">
+                        <p class="text-base font-semibold">Upload failed</p>
+                        <p data-upload-error-message class="text-sm leading-relaxed">
+                            Something went wrong. Please try again.
+                        </p>
+                    </div>
+                </div>
+            </div>
             <div class="flex flex-col gap-8">
                 {% include 'components/upload-form.html' %}
             </div>

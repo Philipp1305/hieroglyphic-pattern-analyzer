@@ -1,11 +1,12 @@
 from flask import Flask, render_template, current_app
 from flask_socketio import SocketIO, emit
 import os
-from base64 import b64decode
 import json
+import psycopg2
 from psycopg2.extras import Json
+from .routes.upload import bp as upload_papyrus
+
 from src.database.insert import run_insert
-from src.database.select import run_select
 from .services.papyri_service import fetch_papyri_summaries
 
 socketio = SocketIO()
@@ -18,6 +19,8 @@ def create_app():
         template_folder=os.path.join(base_dir, "templates"),
         static_folder=os.path.join(base_dir, "static")
     )
+    app.register_blueprint(upload_papyrus)
+
     socketio.init_app(app, cors_allowed_origins="*")
 
     def list_static_js_files():
@@ -69,101 +72,96 @@ def create_app():
 
     return app
 
-
 @socketio.on("connect")
 def handle_connect():
     current_app.logger.debug("WebSocket client connected")
     emit("server_ready", {"message": "Connected to GlyPat Server"})
 
+@socketio.on("c2s:upload_papyrus")
+def handle_upload_papyrus(data) -> None:
+    current_app.logger.debug("c2s:upload_papyrus received with keys: %s", list(data.keys()))
 
-@socketio.on("ts_new_papyrus")
-def upload_new_papyrus(data):
-    id_new_papyrus = None
+    required_keys = [
+        "papyrus_name",
+        "reading_direction",
+        "papyrus_image_file",
+        "annotation_json_file",
+    ]
+    missing = [k for k in required_keys if k not in data]
+    if missing:
+        msg = f"missing fields: {', '.join(missing)}"
+        current_app.logger.warning("Upload Papyrus failed: %s", msg)
+        emit(
+            "s2c:upload_papyrus:response",
+            {"status": "error", "message": msg, "id": None},
+        )
+        return
 
     try:
-        if not isinstance(data, dict):
-            raise ValueError("Upload payload must be an object.")
+        title = data["papyrus_name"] or "papyrus"
+        reading_direction = int(data["reading_direction"])
+        id_status = 1  # initialer Status
 
-        title = (data.get("papyrus_name") or "").strip()
-        reading_direction = (
-            1
-            if str(data.get("reading_direction", "ltr")).strip().lower() == "rtl"
-            else 0
-        )
-        status_id = int(data.get("status_id") or 1)
+        # --- JSON-Datei aus Payload holen ---
+        json_src = data["annotation_json_file"]
+        if hasattr(json_src, "read"):          # File-like (z.B. FileStorage)
+            json_bytes = json_src.read()
+        elif isinstance(json_src, bytes):
+            json_bytes = json_src
+        else:                                  # str o.ä.
+            json_bytes = str(json_src).encode("utf-8")
 
-        annotation_payload = data.get("annotation_json")
-        if annotation_payload is None:
-            raise ValueError("annotation_json missing")
-        if isinstance(annotation_payload, str):
-            annotation_payload = annotation_payload.strip()
-            if not annotation_payload:
-                raise ValueError("annotation_json empty")
-            annotation_payload = json.loads(annotation_payload)
-        elif not isinstance(annotation_payload, (dict, list)):
-            raise ValueError("annotation_json must be a JSON object or list")
+        json_str = json_bytes.decode("utf-8")
+        json_payload = json.loads(json_str)
 
-        image_payload = data.get("papyrus_image")
-        if image_payload is None:
-            raise ValueError("papyrus_image missing")
-
-        file_name = (
-            data.get("papyrus_image_name")
-            or data.get("papyrus_image_filename")
-            or ""
-        )
-        mimetype = data.get("papyrus_image_mimetype")
-        raw_image = image_payload
-        if isinstance(image_payload, dict):
-            file_name = (
-                image_payload.get("name")
-                or image_payload.get("filename")
-                or file_name
-            )
-            mimetype = (
-                image_payload.get("mimetype")
-                or image_payload.get("content_type")
-                or mimetype
-            )
-            raw_image = image_payload.get("data") or image_payload.get("content")
-
-        if isinstance(raw_image, (bytes, bytearray)):
-            image_bytes = bytes(raw_image)
-        elif isinstance(raw_image, str):
-            payload = raw_image
-            if payload.startswith("data:") and "," in payload:
-                header, payload = payload.split(",", 1)
-                if not mimetype and header.startswith("data:"):
-                    mimetype = header.split(";")[0].split(":")[1]
-            image_bytes = b64decode(payload)
+        # --- Bilddaten aus Payload holen ---
+        img_src = data["papyrus_image_file"]
+        if hasattr(img_src, "read"):           # File-like
+            img_bytes = img_src.read()
+        elif isinstance(img_src, bytes):
+            img_bytes = img_src
         else:
-            raise ValueError("Unsupported papyrus_image payload")
+            raise TypeError("papyrus_image_file must be bytes or file-like")
 
-        if not file_name:
-            file_name = f"{title or 'papyrus'}.bin"
-        if not mimetype:
-            mimetype = "application/octet-stream"
+        file_name = data.get("papyrus_image_filename", "uploaded_papyrus_image")
+        mimetype = data.get("papyrus_image_mimetype", "application/octet-stream")
 
-        insert_sql = """
-            INSERT INTO t_images (json, title, img, file_name, mimetype, reading_direction, id_status)
+        # --- Insert in T_IMAGES ---
+        sql = """
+            INSERT INTO T_IMAGES (
+                json,
+                title,
+                img,
+                file_name,
+                mimetype,
+                reading_direction,
+                id_status
+            )
             VALUES (%s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         """
+
         params = (
-            Json(annotation_payload),
-            title or file_name,
-            image_bytes,
-            file_name,
-            mimetype,
-            reading_direction,
-            status_id,
+            Json(json_payload),             # jsonb
+            title,                          # text
+            psycopg2.Binary(img_bytes),     # bytea
+            file_name,                      # text
+            mimetype,                       # text
+            reading_direction,              # numeric(1,0)
+            id_status,                      # number/int
         )
-        id_new_papyrus = run_insert(insert_sql, params)
 
-    except Exception as exc:
-        current_app.logger.exception("Failed to upload papyrus", exc_info=exc)
+        new_id = run_insert(sql, params)
 
-    if id_new_papyrus is None:
-        emit("fs-r_new_papyrus", {"message": "error", "id": None})
-    else:
-        emit("fs-r_new_papyrus", {"message": "success", "id": id_new_papyrus})
+        current_app.logger.info("New papyrus inserted with id=%s", new_id)
+        emit(
+            "s2c:upload_papyrus:response",
+            {"status": "success", "message": "inserted", "id": new_id},
+        )
+
+    except Exception as e:
+        current_app.logger.exception("Error while handling c2s:upload_papyrus: %s", e)
+        emit(
+            "s2c:upload_papyrus:response",
+            {"status": "error", "message": str(e), "id": None},
+        )

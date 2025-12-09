@@ -4,4 +4,6 @@ psycopg2
 python-dotenv
 pandas
 Flask
-SocketIO
+Flask-SocketIO
+types-Flask-SocketIO
+types-psycopg2

@@ -13,6 +13,7 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/icon.png') }}" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     {% if static_js_files %}
         {% for script_path in static_js_files %}
             <script src="{{ url_for('static', filename=script_path) }}"></script>

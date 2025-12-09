@@ -1,102 +1,176 @@
 <div
     class="rounded-xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-6 shadow-sm">
+    
     <form class="flex flex-col gap-8" enctype="multipart/form-data" id="papyrusUploadForm">
         <h2 class="text-2xl font-bold leading-tight tracking-[-0.015em]">Upload New Papyrus</h2>
+
+        <!-- Papyrus Name -->
         <div class="flex flex-col gap-6">
             <div class="flex flex-col gap-3">
-                <label class="text-base font-medium" for="papyrus-name">Papyrus Name</label>
+                <label class="text-base font-medium" for="papyrus-name-input">Papyrus Name</label>
                 <input
-                    class="block w-full rounded-lg border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark placeholder:text-text-secondary-light dark:placeholder:text-text-secondary-dark focus:border-primary focus:ring-primary"
-                    id="papyrus-name" name="papyrus_name" placeholder="e.g. Papyrus_Ebers_02" required type="text" />
+                    id="papyrus-name-input"
+                    name="papyrus_name"
+                    type="text"
+                    placeholder="e.g. Papyrus_Ebers_02"
+                    required
+                    class="block w-full rounded-lg border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark
+                           text-text-light dark:text-text-dark placeholder:text-text-secondary-light dark:placeholder:text-text-secondary-dark
+                           focus:border-primary focus:ring-primary"
+                />
             </div>
+
+            <!-- File Uploads -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <!-- Papyrus Image -->
                 <div class="relative">
                     <label
-                        class="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-border-light dark:border-border-dark p-8 text-center transition hover:border-primary focus-within:border-primary cursor-pointer"
-                        for="papyrus-image">
-                        <input accept="image/*" class="sr-only" id="papyrus-image" name="papyrus_image" required
-                            type="file" />
-                        <span
-                            class="material-symbols-outlined text-4xl text-text-secondary-light dark:text-text-secondary-dark">image</span>
+                        class="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed
+                               border-border-light dark:border-border-dark p-8 text-center transition hover:border-primary
+                               focus-within:border-primary cursor-pointer"
+                        for="papyrus-image-input">
+
+                        <input
+                            id="papyrus-image-input"
+                            name="papyrus_image_file"
+                            type="file"
+                            accept="image/*"
+                            required
+                            class="sr-only"
+                        />
+
+                        <span class="material-symbols-outlined text-4xl text-text-secondary-light dark:text-text-secondary-dark">
+                            image
+                        </span>
+
                         <div class="flex flex-col items-center gap-1">
                             <p class="text-lg font-bold leading-tight tracking-[-0.015em]">Upload Papyrus Image</p>
-                            <p
-                                class="text-sm font-normal leading-normal text-text-secondary-light dark:text-text-secondary-dark">
+                            <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">
                                 Drag &amp; drop or click to browse
                             </p>
                         </div>
+
                         <div class="flex flex-col items-center gap-1 text-sm">
                             <span class="text-text-secondary-light dark:text-text-secondary-dark">Selected file:</span>
-                            <span class="font-medium text-text-light dark:text-text-dark" data-file-label="papyrus_image">No
-                                file chosen</span>
-                            <button class="text-xs font-semibold text-primary hover:underline opacity-0 pointer-events-none transition-opacity"
-                                data-file-reset="papyrus_image" type="button">Remove file</button>
+                            <span data-file-label="papyrus_image_file"
+                                  class="font-medium text-text-light dark:text-text-dark">No file chosen</span>
+                            <button
+                                type="button"
+                                data-file-reset="papyrus_image_file"
+                                class="text-xs font-semibold text-primary hover:underline opacity-0 pointer-events-none transition-opacity">
+                                Remove file
+                            </button>
                         </div>
                     </label>
                 </div>
+
+                <!-- Annotation JSON -->
                 <div class="relative">
                     <label
-                        class="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-border-light dark:border-border-dark p-8 text-center transition hover:border-primary focus-within:border-primary cursor-pointer"
-                        for="annotation-json">
-                        <input accept="application/json" class="sr-only" id="annotation-json" name="annotation_json"
-                            required type="file" />
-                        <span
-                            class="material-symbols-outlined text-4xl text-text-secondary-light dark:text-text-secondary-dark">data_object</span>
+                        class="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-border-light
+                               dark:border-border-dark p-8 text-center transition hover:border-primary focus-within:border-primary
+                               cursor-pointer"
+                        for="annotation-json-input">
+
+                        <input
+                            id="annotation-json-input"
+                            name="annotation_json_file"
+                            type="file"
+                            accept="application/json"
+                            required
+                            class="sr-only"
+                        />
+
+                        <span class="material-symbols-outlined text-4xl text-text-secondary-light dark:text-text-secondary-dark">
+                            data_object
+                        </span>
+
                         <div class="flex flex-col items-center gap-1">
                             <p class="text-lg font-bold leading-tight tracking-[-0.015em]">Upload COCO-style JSON</p>
-                            <p
-                                class="text-sm font-normal leading-normal text-text-secondary-light dark:text-text-secondary-dark">
+                            <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">
                                 Drag &amp; drop or click to browse
                             </p>
                         </div>
+
                         <div class="flex flex-col items-center gap-1 text-sm">
                             <span class="text-text-secondary-light dark:text-text-secondary-dark">Selected file:</span>
-                            <span class="font-medium text-text-light dark:text-text-dark" data-file-label="annotation_json">No
-                                file chosen</span>
-                            <button class="text-xs font-semibold text-primary hover:underline opacity-0 pointer-events-none transition-opacity"
-                                data-file-reset="annotation_json" type="button">Remove file</button>
+                            <span data-file-label="annotation_json_file"
+                                  class="font-medium text-text-light dark:text-text-dark">No file chosen</span>
+                            <button
+                                type="button"
+                                data-file-reset="annotation_json_file"
+                                class="text-xs font-semibold text-primary hover:underline opacity-0 pointer-events-none transition-opacity">
+                                Remove file
+                            </button>
                         </div>
                     </label>
                 </div>
             </div>
         </div>
+
+        <!-- Reading Direction -->
         <div class="flex flex-col gap-3">
             <div class="flex items-center gap-2">
                 <label class="text-base font-medium">Reading Direction</label>
-                <div class="group relative flex items-center">
-                    <button
-                        class="flex items-center justify-center text-text-secondary-light dark:text-text-secondary-dark hover:text-text-light dark:hover:text-text-dark">
-                        <span class="material-symbols-outlined text-base">help</span>
-                    </button>
-                    <div
-                        class="pointer-events-none absolute bottom-full mb-2 w-64 rounded-lg border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-3 text-sm text-text-secondary-light dark:text-text-secondary-dark opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
-                        Specify the reading direction of the papyrus. The text begins on the side toward which the animals are facing.
-                    </div>
-                </div>
             </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+
+                <!-- LTR -->
                 <label
-                    class="flex cursor-pointer items-center gap-3 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:checked]:ring-2 has-[:checked]:ring-primary">
-                    <input checked=""
-                        class="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
-                        name="reading_direction" type="radio" value="ltr" />
+                    class="flex cursor-pointer items-center gap-3 rounded-lg border border-border-light dark:border-border-dark
+                           bg-background-light dark:bg-background-dark p-3 
+                           has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:checked]:ring-2 has-[:checked]:ring-primary">
+
+                    <input
+                        id="reading-direction-ltr"
+                        name="reading_direction"
+                        type="radio"
+                        value="ltr"
+                        checked
+                        class="h-4 w-4 text-primary focus:ring-primary"
+                    />
+
                     <span class="text-sm font-medium">Left-to-Right</span>
                 </label>
+
+                <!-- RTL -->
                 <label
-                    class="flex cursor-pointer items-center gap-3 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:checked]:ring-2 has-[:checked]:ring-primary">
-                    <input class="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
-                        name="reading_direction" type="radio" value="rtl" />
+                    class="flex cursor-pointer items-center gap-3 rounded-lg border border-border-light dark:border-border-dark
+                           bg-background-light dark:bg-background-dark p-3 
+                           has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:checked]:ring-2 has-[:checked]:ring-primary">
+
+                    <input
+                        id="reading-direction-rtl"
+                        name="reading_direction"
+                        type="radio"
+                        value="rtl"
+                        class="h-4 w-4 text-primary focus:ring-primary"
+                    />
+
                     <span class="text-sm font-medium">Right-to-Left</span>
                 </label>
             </div>
         </div>
+
+        <!-- Submit Button -->
         <div class="flex items-end justify-end">
             <button
-                class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-10 px-5 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-primary/60"
-                data-upload-submit type="submit">
-                <span class="material-symbols-outlined">auto_fix_high</span>
-                <span class="truncate">Process Papyrus</span>
+                data-upload-submit
+                type="submit"
+                class="flex min-w-[112px] max-w-[480px] cursor-pointer items-center justify-center gap-2 
+                       overflow-hidden rounded-lg h-10 px-5 bg-primary text-white text-sm font-bold tracking-[0.015em]
+                       hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-primary/60">
+                <span
+                    data-upload-submit-spinner
+                    class="hidden h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent"
+                    aria-hidden="true">
+                </span>
+                <span data-upload-submit-icon class="material-symbols-outlined">auto_fix_high</span>
+                <span data-upload-submit-text class="truncate">Process Papyrus</span>
             </button>
         </div>
+
     </form>
 </div>

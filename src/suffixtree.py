@@ -81,5 +81,5 @@ seq_str = "".join(mapping[id_] for id_ in sequence)
 
 # tree = STree.STree(seq_str)
 
-#print(tree.lcs())
-
+#print(tree.lcs()) 
+>>>>>>> 761a3cd (keineahnung)

@@ -1,65 +1,86 @@
-from database.select import run_select
+from src.database.select import run_select
+from src.database.connect import connect
+from psycopg2.extras import execute_batch
 from typing import List, Tuple, Any
-import pandas as pd
 
 X_IDX = 3
 Y_IDX = 4
 
-def sort_hieroglyphes(
-    rows: List[Tuple[Any, ...]],
+def sort_and_insert(
+    image_id: int,
     tolerance: float,
+    reading_direction: str = "ltr",
     x_index: int = X_IDX,
     y_index: int = Y_IDX,
-    reading_direction: str = "ltr",
 ):
+    """Sort glyphs and insert directly into T_GLYPHES_SORTED."""
+    
+    # Get glyphs from database
+    rows = run_select(
+        "SELECT id, id_image, id_gardiner, bbox_x, bbox_y, bbox_width, bbox_height "
+        "FROM T_GLYPHES_RAW WHERE id_image = %s",
+        (image_id,)
+    )
+    
     if not rows:
-        return pd.DataFrame()
-
+        return 0
+    
+    # Sort by x, then y
     items = sorted(rows, key=lambda r: (r[x_index], r[y_index]))
-
+    
+    # Group into columns by x tolerance
     columns: List[List[Tuple[Any, ...]]] = []
     i = 0
     n = len(items)
-
+    
     while i < n:
         x0 = items[i][x_index]
         current_col = []
         while i < n and items[i][x_index] <= x0 + tolerance:
             current_col.append(items[i])
             i += 1
-
+        
         current_col.sort(key=lambda r: r[y_index])
         columns.append(current_col)
-
-    records = []
+    
+    # Build insert data
+    data = []
     for c_idx, col in enumerate(columns):
         for r_idx, r in enumerate(col):
-            rec = {
-                "id": r[0],
-                "id_image": r[1],
-                "gardiner_code": r[2],
-                "x": r[x_index],
-                "y": r[y_index],
-                "width": r[x_index + 2],
-                "height": r[x_index + 3],
-                "col_index": c_idx,
-                "row_index": r_idx,
-            }
-            records.append(rec)
-
-    df = pd.DataFrame(records)
-    if not df.empty and reading_direction.lower() == "rtl":
-        max_col = int(df["col_index"].max())
-        df["col_index"] = max_col - df["col_index"]
-        df = df.sort_values(by=["col_index", "row_index"])
-    return df
+            data.append((r[0], c_idx, r_idx))  # (id_glyph, column, row)
+    
+    # Reverse column indices for RTL
+    if reading_direction.lower() == "rtl":
+        max_col = max(d[1] for d in data)
+        data = [(d[0], max_col - d[1], d[2]) for d in data]
+    
+    # Insert into database
+    conn = connect()
+    try:
+        with conn.cursor() as cur:
+            cur.executemany(
+                "INSERT INTO t_glyphes_sorted (id_glyph, v_column, v_row) VALUES (%s, %s, %s)",
+                data
+            )
+        conn.commit()
+        return len(data)
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
-    id_image    = 1
-    tolerance   = 100
-    sql_query   = f"SELECT * FROM T_HIEROGLYPHES WHERE id_image = {id_image}"
-    rows        = run_select(sql_query)
-
-    df = sort_hieroglyphes(rows, tolerance, reading_direction='rtl')
-
-    df.to_csv('sorted_glyphes.csv', sep=',', encoding='utf-8', index=False)
+    import sys
+    
+    if len(sys.argv) < 2:
+        print("Usage: python -m src.sort <image_id> [tolerance]")
+        sys.exit(1)
+    
+    image_id = int(sys.argv[1])
+    tolerance = float(sys.argv[2]) if len(sys.argv) > 2 else 100.0
+    rows = run_select("SELECT reading_direction FROM T_IMAGES WHERE id = %s", (image_id,))
+    reading_dir = "rtl" if (rows and rows[0][0] == 1) else "ltr"
+    
+    count = sort_and_insert(image_id, tolerance, reading_dir)
+    print(f"Sorted {count} glyphs for image {image_id}")

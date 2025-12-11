@@ -4,3 +4,4 @@
 .env
 .venv
 .mypy_cache
+.history

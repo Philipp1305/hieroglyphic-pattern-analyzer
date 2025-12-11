@@ -10,7 +10,9 @@ data_path = BASE_DIR / "data" / "sorted_glyphes.csv"
 df = pd.read_csv(data_path)
 
 sequence = df["gardiner_code"].astype(str).tolist()
+#sequence = ['160', '242', '236', '611', '87', '353', '14', '542', '294', '242', '462', '493', '87', '462', '294', '422', '602', '353', '557', '126', '388', '461']
 sequence ='#'.join(sequence) + '$'
+
 
 def build_suffix_array(s):
     n = len(s)
@@ -34,7 +36,28 @@ def build_suffix_array(s):
 
     return sa
 
-build_suffix_array(sequence)
+def kasai_lcp(s, sa):
+    n = len(s)
+    k = 0
+    rank = [0]*n
+    lcp = [0]*n
+
+    for i in range(n):
+        rank[i] = sa[i]
+
+    for i in range(n):
+        if rank[i] == n-1:
+            k = 0
+            continue
+        j = sa[rank[i] + 1]
+        while i+k < n and j+k < n and s[i+k] == s[j+k]:
+            k += 1
+        lcp[rank[i]] = k
+        if k:
+            k -= 1
+
+    return lcp
+
 
 def longest_repeated_substring(s, sa, lcp):
     """
@@ -63,20 +86,9 @@ def longest_repeated_substring(s, sa, lcp):
 
     return substring, max_lcp, positions
 
-
-#print("Loaded sequence of length:", sequence)
-
-"""st = STree.STree(sequence)
-print(STree.lrs(st))
-print(st.find_all("620"))"""
-
-
-unique_ids = sorted(set(sequence))
-mapping = {id_: chr(0x10000 + i) for i, id_ in enumerate(unique_ids)}
-
-seq_str = "".join(mapping[id_] for id_ in sequence)
-
-#tree = STree.STree(seq_str)
-
-#print(tree.lcs())
-
+suffixarray = build_suffix_array(sequence)
+#print(suffixarray)
+lcp = kasai_lcp(sequence, suffixarray)
+print(lcp)
+lrs = longest_repeated_substring(sequence,suffixarray,lcp)
+#print(lrs[0])

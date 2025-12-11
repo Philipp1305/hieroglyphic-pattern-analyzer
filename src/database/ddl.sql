@@ -102,16 +102,17 @@ execute function SET_T_GARDINER_CODES_ID();
 
 -- TABLE
 create table T_GLYPHES_RAW(
-	id			integer not null,
+	id 			integer not null
+	id_original	integer not null,
 	id_image	integer not null,
 	id_gardiner integer,
 	bbox_x 		double precision not null,
 	bbox_y 		double precision not null,
 	bbox_height double precision not null,
 	bbox_width 	double precision not null,
-	constraint 	T_HIEROGLYPHES_PK primary key (id, id_image),
-	constraint	T_HIEROGLYPHES_FK_IMAGE foreign key (id_image) references T_IMAGES(id),
-	constraint 	T_HIEROGLYPHES_FK_GARDINER foreign key (id_gardiner) references T_GARDINER_CODES(id)
+	constraint 	T_GLYPHES_RAW_PK primary key (id),
+	constraint	T_GLYPHES_RAW_FK_IMAGE foreign key (id_image) references T_IMAGES(id),
+	constraint 	T_GLYPHES_RAW_FK_GARDINER foreign key (id_gardiner) references T_GARDINER_CODES(id)
 );
 
 -- COMMENTS
@@ -132,8 +133,25 @@ is 'bounding box height';
 comment on column t_glyphes_raw.bbox_width
 is 'bounding box width';
 
--- uploaded and directly inserted with id from coco json
--- no sequence or trigger needed
+-- SEQUENCE
+create sequence T_GLYPHES_RAW_SEQ
+start with 1
+increment by 1;
+
+-- TRIGGER FUNCTION
+create or replace function SET_T_GLYPHES_RAW_ID()
+returns trigger as $$
+begin
+    new.id := nextval('T_GLYPHES_RAW_SEQ');
+    return new;
+end;
+$$ language plpgsql;
+
+-- TRIGGER
+create or replace trigger T_GLYPHES_RAW_TR
+before insert on T_GLYPHES_RAW
+for each row
+execute function SET_T_GLYPHES_RAW_ID();
 
 ------------------------------------------------------------------
 -- T_GLYPHES_SORTED

@@ -35,7 +35,7 @@ def process_image(image_id):
     try:
         with conn.cursor() as cur:
             execute_batch(cur, 
-                "INSERT INTO T_GLYPHES_RAW (id, id_image, id_gardiner, bbox_x, bbox_y, bbox_height, bbox_width) "
+                "INSERT INTO T_GLYPHES_RAW (id_original, id_image, id_gardiner, bbox_x, bbox_y, bbox_height, bbox_width) "
                 "VALUES (%s, %s, %s, %s, %s, %s, %s)",
                 [(aid, image_id, gardiner_map.get(gc), b[0], b[1], b[3], b[2]) for aid, gc, b in annotations]
             )
@@ -58,5 +58,6 @@ if __name__ == "__main__":
         count = process_image(int(sys.argv[1]))
         print(f"Image {sys.argv[1]}: {count or 'already processed'}")
     except Exception as e:
-        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)

@@ -141,7 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if (isSuccess) {
             clearError();
-            window.location.href = `/sort/${payload.id}`;
+            window.location.href = `/overview?id=${payload.id}`;
             return;
         }
 

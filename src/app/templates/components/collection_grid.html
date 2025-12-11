@@ -1,15 +1,15 @@
 {% from 'components/status_badge.html' import status_badge %}
 <div class="flex flex-col gap-4">
-    {% if papyri %}
+    {% if collection %}
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {% for papyrus in papyri %}
+            {% for item in collection %}
                 <a class="group flex flex-col overflow-hidden rounded-xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark shadow-sm transition-all hover:shadow-lg hover:-translate-y-1"
-                    href="{{ url_for('view') }}">
+                    href="{{ url_for('site.view_page') }}">
                     <div class="aspect-h-3 aspect-w-4 overflow-hidden">
-                        {% if papyrus.image_src %}
+                        {% if item.image_src %}
                             <img class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                alt="{{ papyrus.title or 'Papyrus preview' }}"
-                                src="{{ papyrus.image_src }}" />
+                                alt="{{ item.title or 'Collection preview' }}"
+                                src="{{ item.image_src }}" />
                         {% else %}
                             <div class="flex h-full w-full items-center justify-center bg-stone-200 dark:bg-stone-800 text-sm text-text-secondary-light dark:text-text-secondary-dark">
                                 No preview
@@ -18,8 +18,8 @@
                     </div>
                     <div class="p-4">
                         <div class="flex items-center justify-between gap-2">
-                            <p class="text-sm font-semibold truncate">{{ papyrus.title or 'Untitled Papyrus' }}</p>
-                            {{ status_badge(papyrus.status_label or 'Unknown', papyrus.status_variant) }}
+                            <p class="text-sm font-semibold truncate">{{ item.title or 'Untitled item' }}</p>
+                            {{ status_badge(item.status_label or 'Unknown', item.status_variant) }}
                         </div>
                     </div>
                 </a>
@@ -27,7 +27,7 @@
         </div>
     {% else %}
         <div class="rounded-xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-6 text-center text-sm text-text-secondary-light dark:text-text-secondary-dark">
-            No papyri found in the database yet.
+            No collection entries found in the database yet.
         </div>
     {% endif %}
 </div>

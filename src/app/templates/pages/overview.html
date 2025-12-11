@@ -1,0 +1,115 @@
+<div class="relative flex h-screen w-full flex-col bg-background-light dark:bg-background-dark" data-overview-root data-image-id="{{ image_id or '' }}">
+    {% include 'components/navbar.html' %}
+    <main class="flex-1">
+        <section class="bg-gradient-to-b from-card-light/60 to-transparent dark:from-card-dark/40">
+            <div class="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-10 sm:px-6 lg:grid-cols-3 lg:px-8">
+                <div class="flex flex-col gap-6 lg:col-span-2">
+                    <div class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-6 shadow-lg">
+                        <div class="flex flex-col gap-3">
+                            <div class="flex items-center gap-2 text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                                <a href="{{ url_for('site.collection') }}">Collection</a>
+                                <span class="material-symbols-outlined text-sm">chevron_right</span>
+                                <span class="font-semibold text-primary" data-overview-breadcrumb>ID #{{ image_id or '—' }}</span>
+                            </div>
+                            <h1 class="text-3xl font-black text-text-light dark:text-text-dark tracking-tight" data-overview-title>
+                                {% if image_id %}Papyrus wird geladen …{% else %}Papyrus Overview{% endif %}
+                            </h1>
+                            <p class="text-base text-text-secondary-light dark:text-text-secondary-dark">
+                                
+                            </p>
+                        </div>
+                    </div>
+                    <div class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-4 shadow-lg">
+                        <div class="relative h-80 rounded-xl overflow-hidden flex items-center justify-center bg-card-light dark:bg-card-dark" data-overview-image>
+                            <span class="loading-indicator-pointer-events-none pointer-events-none absolute inset-0 flex items-center justify-center gap-3" data-overview-loading>
+                                <div class="relative flex h-10 w-10">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                    <span class="relative inline-flex h-10 w-10 rounded-full bg-primary/70"></span>
+                                </div>
+                                <div class="text-sm text-text-secondary-light dark:text-text-secondary-dark">Loading preview…</div>
+                            </span>
+                            <div class="absolute inset-0 bg-center bg-contain bg-no-repeat opacity-0 transition-opacity duration-300" data-overview-image-content>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <aside class="flex flex-col gap-6 lg:sticky lg:top-4 h-full">
+                    <div class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark shadow-lg overflow-hidden h-full flex flex-col">
+                        <div class="flex items-center justify-between border-b border-border-light dark:border-border-dark bg-card-light/60 dark:bg-card-dark/60 px-5 py-4">
+                            <div class="flex items-center gap-3">
+                                <div>
+                                    <p class="text-base font-semibold text-text-light dark:text-text-dark">Pipeline</p>
+                                </div>
+                            </div>
+                            <div class="inline-flex items-center gap-2 px-3 py-1 text-[10px] font-semibold uppercase text-primary">
+                                <span class="relative flex h-2 w-2">
+                                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60"></span>
+                                    <span class="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex flex-1 flex-col divide-y divide-border-light dark:divide-border-dark" data-pipeline-container>
+                            <div class="flex items-center justify-center py-16 text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                                Loading pipeline…
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+                <div class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-6 shadow-lg lg:col-span-3">
+                    <div class="grid gap-4 md:grid-cols-3">
+                        <div class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark/70 p-5 flex h-full flex-col gap-4">
+                            <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-wide">
+                                <p class="text-text-secondary-light dark:text-text-secondary-dark">Sorting View</p>
+                                <span class="rounded-full bg-primary/10 px-2 py-1 text-primary text-[10px]">Action required</span>
+                            </div>
+                            <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                                Computed columns and rows, and thus the reading direction.
+                            </p>
+                            <div class="mt-auto flex justify-end">
+                                <a  type="button"
+                                    class="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                                    <span class="material-symbols-outlined text-base">sort</span>
+                                    Sorting View
+                                </a>
+                            </div>
+                        </div>
+                        <div class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark/70 p-5 flex h-full flex-col gap-4">
+                            <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-wide">
+                                <p class="text-text-secondary-light dark:text-text-secondary-dark">View N-Grams</p>
+                                <span class="rounded-full bg-border-light px-2 py-1 text-text-secondary-light text-[10px] dark:bg-border-dark">Locked</span>
+                            </div>
+                            <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                                Most frequent glyph sequences and N-grams by length.
+                            </p>
+                            <div class="mt-auto flex justify-end">
+                                <button type="button"
+                                    class="pointer-events-none inline-flex items-center justify-center gap-2 rounded-full border border-border-light/70 dark:border-border-dark/70 px-5 py-3 text-sm font-semibold text-text-secondary-light dark:text-text-secondary-dark opacity-60 cursor-not-allowed"
+                                    aria-disabled="true">
+                                    <span class="material-symbols-outlined text-base">dataset</span>
+                                    View N-Grams
+                                </button>
+                            </div>
+                        </div>
+                        <div class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark/70 p-5 flex h-full flex-col gap-4">
+                            <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-wide">
+                                <p class="text-text-secondary-light dark:text-text-secondary-dark">View Suffix Tree</p>
+                                <span class="rounded-full bg-border-light px-2 py-1 text-text-secondary-light text-[10px] dark:bg-border-dark">Locked</span>
+                            </div>
+                            <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                                Suffix tree helps detect recurring patterns and textual variants.
+                            </p>
+                            <div class="mt-auto flex justify-end">
+                                <button type="button"
+                                    class="pointer-events-none inline-flex items-center justify-center gap-2 rounded-full border border-border-light/70 dark:border-border-dark/70 px-5 py-3 text-sm font-semibold text-text-secondary-light dark:text-text-secondary-dark opacity-60 cursor-not-allowed"
+                                    aria-disabled="true">
+                                    <span class="material-symbols-outlined text-base">account_tree</span>
+                                    View Suffix Tree
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>

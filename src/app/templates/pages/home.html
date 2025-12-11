@@ -12,13 +12,13 @@
                         Upload, process, and explore your coco-annotated papyri in a single workspace. GlyPat computes the columns and highlights recurring glyph structures based on the reading direction.
                     </p>
                     <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <a href="{{ url_for('upload') }}"
+                        <a href="{{ url_for('site.upload_page') }}"
                             class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-base font-semibold text-white shadow-lg transition hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
                             Upload papyrus
                         </a>
-                        <a href="{{ url_for('papyri') }}"
+                        <a href="{{ url_for('site.collection') }}"
                             class="inline-flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark px-6 py-3 text-base font-semibold text-text-light dark:text-text-dark transition hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-                            Explore library
+                            Explore collection
                         </a>
                     </div>
                 </div>

@@ -1,0 +1,19 @@
+<div class="relative flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark">
+    {% include 'components/navbar.html' %}
+    <main class="flex-1">
+        <section class="bg-gradient-to-b from-card-light/70 to-transparent dark:from-card-dark/40">
+            <div class="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl flex-col items-center justify-center gap-6 px-4 sm:px-6 lg:px-8 py-12 sm:py-16 text-center">
+                <p class="text-sm font-semibold uppercase tracking-[0.3em] text-primary">GlyPat</p>
+                <h1 class="text-5xl sm:text-6xl font-black text-text-light dark:text-text-dark">
+                    {{ error_code or 500 }}
+                </h1>
+                <p class="text-2xl font-semibold text-text-light dark:text-text-dark">
+                    {{ error_title or "Unknown Error" }}
+                </p>
+                <p class="text-lg sm:text-xl text-text-secondary-light dark:text-text-secondary-dark max-w-2xl">
+                    {{ error_message or "Something went wrong. Please try again or contact us." }}
+                </p>
+            </div>
+        </section>
+    </main>
+</div>

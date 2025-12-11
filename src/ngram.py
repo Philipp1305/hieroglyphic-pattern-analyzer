@@ -40,6 +40,6 @@ def save_ngrams(df: pd.DataFrame, path: str, fmt: str = "csv") -> None:
 if __name__ == "__main__":
     # ...existing code...
     # whole_sequence ist bereits vorhanden oben
-    for n in (10,15,20,27):
+    for n in (3,4):
         top_df = get_top_ngrams_df(whole_sequence, n, topk=50)
         save_ngrams(top_df, f"top_{n}_grams.csv")

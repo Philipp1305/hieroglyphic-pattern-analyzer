@@ -181,10 +181,12 @@ is 'row position after sorting';
 ------------------------------------------------------------------
 
 -- TABLE
-create table t_images_status (
+create table T_IMAGES_STATUS(
 	id integer 	not null,
 	status text	not null,
-	constraint	T_IMAGES_STATUS_PK primary key (id)
+	status_code not null,
+	constraint 	T_IMAGES_STATUS_PK primary key (id),
+	constraint 	T_IMAGES_STATUS_UQ unique (status_code)
 );
 
 -- COMMENTS
@@ -193,7 +195,9 @@ is 'stores the possible status of images (e.g., pending, processed)';
 comment on column t_images_status.id
 is 'Primary Key';
 comment on column t_images_status.status
-is 'status';
+is 'text of status';
+comment on column t_images_status.status_code
+is 'code of status';
 
 create sequence T_IMAGES_STATUS_SEQ
 start with 1
@@ -211,3 +215,22 @@ create or replace trigger T_IMAGES_STATUS_TR
 before insert on T_IMAGES_STATUS
 for each row
 execute function SET_T_IMAGES_STATUS_ID();
+
+-- Insert initial statuses
+insert into T_IMAGES_STATUS(status, status_code)
+values ('Uploaded', 'UPLOAD');
+
+insert into T_IMAGES_STATUS(status, status_code)
+values ('JSON processed', 'JSON');
+
+insert into T_IMAGES_STATUS(status, status_code)
+values ('Sorting', 'SORT_VALIDATE');
+
+insert into T_IMAGES_STATUS(status, status_code)
+values ('Sorted', 'SORT_VALIDATE');
+
+insert into T_IMAGES_STATUS(status, status_code)
+values ('N-Grams computed', 'NGRAMS');
+
+insert into T_IMAGES_STATUS(status, status_code)
+values ('Suffix-Tree computed', 'SUFFIX');

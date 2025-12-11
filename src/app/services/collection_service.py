@@ -8,8 +8,8 @@ from src.database.select import run_select
 
 
 @dataclass(frozen=True)
-class PapyrusSummary:
-    """Lightweight representation of a papyrus card."""
+class CollectionItem:
+    """Lightweight representation of an entry in the collection."""
 
     id: int
     title: str
@@ -36,10 +36,8 @@ DEFAULT_STATUS_VARIANT = "info"
 DEFAULT_MIMETYPE = "image/png"
 
 
-def fetch_papyri_summaries(limit: Optional[int] = None) -> list[PapyrusSummary]:
-    """
-    Load papyri with their status labels and ready-to-use <img> sources.
-    """
+def fetch_collection_items(limit: Optional[int] = None) -> list[CollectionItem]:
+    """Load collection items with their status labels and ready-to-use <img> sources."""
 
     sql = """
         SELECT
@@ -59,20 +57,20 @@ def fetch_papyri_summaries(limit: Optional[int] = None) -> list[PapyrusSummary]:
         params = (limit,)
 
     results = run_select(sql, params)
-    papyri: list[PapyrusSummary] = []
+    collection: list[CollectionItem] = []
 
     for row in results:
         (
-            papyrus_id,
+            item_id,
             title,
             file_name,
             mimetype,
             img_blob,
             status_label,
         ) = row
-        papyri.append(
-            PapyrusSummary(
-                id=papyrus_id,
+        collection.append(
+            CollectionItem(
+                id=item_id,
                 title=((title or file_name or "")).strip(),
                 image_src=_build_image_src(img_blob, mimetype),
                 status_label=status_label or "",
@@ -80,7 +78,7 @@ def fetch_papyri_summaries(limit: Optional[int] = None) -> list[PapyrusSummary]:
             )
         )
 
-    return papyri
+    return collection
 
 
 def _build_image_src(img_blob: Optional[bytes], mimetype: Optional[str]) -> str:

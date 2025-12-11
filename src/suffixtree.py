@@ -1,4 +1,4 @@
-# generate a suffixtree based on restored readingorder
+#generate a suffixtree based on restored readingorder
 import pandas as pd
 from collections import Counter
 from typing import List
@@ -81,4 +81,5 @@ seq_str = "".join(mapping[id_] for id_ in sequence)
 
 # tree = STree.STree(seq_str)
 
-# print(tree.lcs())
+#print(tree.lcs())
+

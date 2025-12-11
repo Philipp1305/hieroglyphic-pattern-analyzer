@@ -141,7 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if (isSuccess) {
             clearError();
-            alert("Upload successful! New ID: " + payload.id);
+            window.location.href = `/sort/${payload.id}`;
             return;
         }
 

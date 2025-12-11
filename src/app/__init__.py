@@ -70,6 +70,10 @@ def create_app():
     def view():
         return render_page("pages/view.html")
 
+    @app.route("/sort/<int:image_id>")
+    def sort(image_id: int):
+        return render_page("pages/sort.html", image_id=image_id)
+    
     return app
 
 @socketio.on("connect")

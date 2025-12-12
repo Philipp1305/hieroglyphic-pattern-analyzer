@@ -3,9 +3,11 @@ from dataclasses import dataclass
 from os import getenv
 from pathlib import Path
 
+
 def connect():
     try:
         from dotenv import load_dotenv
+
         env_path = Path(__file__).resolve().parent / ".env"
         if env_path.exists():
             load_dotenv(env_path)
@@ -26,11 +28,11 @@ def connect():
                 raise RuntimeError(f"Missing required env vars: {', '.join(missing)}")
 
     return psycopg2.connect(
-        host        = LoginCredentials.db_host,
-        port        = LoginCredentials.db_port,
-        database    = LoginCredentials.db_name,
-        user        = LoginCredentials.db_user, 
-        password    = LoginCredentials.db_pass
+        host=LoginCredentials.db_host,
+        port=LoginCredentials.db_port,
+        database=LoginCredentials.db_name,
+        user=LoginCredentials.db_user,
+        password=LoginCredentials.db_pass,
     )
 
 
@@ -53,6 +55,7 @@ def test_connection() -> bool:
     finally:
         if conn is not None:
             conn.close()
+
 
 if __name__ == "__main__":
     test = test_connection()

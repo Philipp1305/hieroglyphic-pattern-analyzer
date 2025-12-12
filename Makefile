@@ -4,11 +4,17 @@ PYTHON ?= python
 run:
 	$(PYTHON) -m src.app
 
-.PHONY: env
+.PHONY: format lint lint-fix
+format:
+	ruff format .
+lint:
+	ruff check .
+lint-fix:
+	ruff check . --fix
+
+.PHONY: env uv-env
 env:
 	pip install -r requirements.txt
-
-.PHONY: uv-env
 uv-env:
 	uv venv .venv
 	uv pip install -r requirements.txt

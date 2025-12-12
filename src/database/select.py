@@ -1,7 +1,10 @@
 from typing import Any, Sequence
 from src.database.connect import connect
 
-def run_select(query: str, params: Sequence[Any] | None = None) -> list[tuple[Any, ...]]:
+
+def run_select(
+    query: str, params: Sequence[Any] | None = None
+) -> list[tuple[Any, ...]]:
     """
     Execute a SELECT statement and return all rows.
 

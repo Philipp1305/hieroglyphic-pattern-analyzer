@@ -25,7 +25,7 @@ def _fetch_image_metadata(image_id: int) -> Optional[dict]:
         SELECT
             i.id,
             i.title,
-            i.img,
+            i.img_preview,
             i.mimetype,
             s.status AS status_label,
             s.status_code

@@ -1,6 +1,7 @@
 from typing import Any, Sequence
 from src.database.connect import connect
 
+
 def run_insert(query: str, params: Sequence[Any] | None = None) -> int:
     """
     Execute an INSERT statement and return the number of affected rows.
@@ -22,9 +23,7 @@ def run_insert(query: str, params: Sequence[Any] | None = None) -> int:
             row = cur.fetchone()
 
             if row is None:
-                raise RuntimeError(
-                    "INSERT did not return a row."
-                )
+                raise RuntimeError("INSERT did not return a row.")
 
             new_id = row[0]
 

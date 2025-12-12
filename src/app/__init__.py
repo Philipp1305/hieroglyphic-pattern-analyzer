@@ -6,13 +6,14 @@ from .routes.site import bp as site_bp
 
 socketio = SocketIO()
 
+
 def create_app():
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
     app = Flask(
         __name__,
         template_folder=os.path.join(base_dir, "templates"),
-        static_folder=os.path.join(base_dir, "static")
+        static_folder=os.path.join(base_dir, "static"),
     )
     app.register_blueprint(api_bp)
     app.register_blueprint(site_bp)

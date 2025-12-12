@@ -45,7 +45,7 @@ def fetch_collection_items(limit: Optional[int] = None) -> list[CollectionItem]:
             i.title,
             i.file_name,
             i.mimetype,
-            i.img,
+            i.img_preview,
             s.status AS status_label
         FROM t_images AS i
         LEFT JOIN t_images_status AS s ON s.id = i.id_status
@@ -71,7 +71,7 @@ def fetch_collection_items(limit: Optional[int] = None) -> list[CollectionItem]:
         collection.append(
             CollectionItem(
                 id=item_id,
-                title=((title or file_name or "")).strip(),
+                title=(title or file_name or "").strip(),
                 image_src=_build_image_src(img_blob, mimetype),
                 status_label=status_label or "",
                 status_variant=_resolve_status_variant(status_label),

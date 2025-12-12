@@ -7,6 +7,7 @@ create table T_IMAGES(
 	json				jsonb	not null,
 	title				text	not null,
 	img					bytea 	not null,
+	img_preview 		bytea	not null,
 	file_name			text 	not null,
 	mimetype			text 	not null,
 	reading_direction 	numeric(1,0) default 0 not null,

@@ -62,12 +62,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!pipelineContainer) {
       return;
     }
-    const normalized = (statusCode || "").toUpperCase();
+    const normalized = (statusCode || "").toString().trim().toUpperCase();
     const states = statusMapping[normalized] || statusMapping.UPLOAD;
     const html = stageOrder
       .map((stage) => renderStage(stage, states[stage.key] || "waiting"))
       .join("");
     pipelineContainer.innerHTML = html;
+
+    updateActionCards(normalized);
   };
 
   const renderStage = (stage, state) => {
@@ -147,6 +149,98 @@ document.addEventListener("DOMContentLoaded", () => {
         <span class="text-xs font-semibold uppercase text-text-secondary-light dark:text-text-secondary-dark">Waiting</span>
     </div>
   `;
+
+  const lockedButtonClasses = [
+    "bg-transparent",
+    "text-text-secondary-light",
+    "dark:text-text-secondary-dark",
+    "border",
+    "border-border-light",
+    "dark:border-border-dark",
+    "hover:border-primary",
+    "hover:text-primary",
+  ];
+  const unlockedButtonClasses = [
+    "bg-primary",
+    "text-white",
+    "border-transparent",
+    "shadow-md",
+    "hover:bg-primary/90",
+    "hover:text-white",
+  ];
+  const lockedStateClasses = ["pointer-events-none", "opacity-60", "cursor-not-allowed", "border-dashed"];
+
+  const actionRules = [
+    {
+      key: "sort",
+      lockedStatuses: ["UPLOAD", "JSON"],
+    },
+    {
+      key: "ngrams",
+      lockedStatuses: ["UPLOAD", "JSON", "SORT_VALIDATE", "SORT"],
+    },
+    {
+      key: "suffix",
+      lockedStatuses: ["UPLOAD", "JSON", "SORT_VALIDATE", "SORT", "NGRAMS"],
+    },
+  ];
+
+  const updateActionCards = (statusCode = "") => {
+    const normalizedStatus = (statusCode || "").toString().trim().toUpperCase();
+    actionRules.forEach((rule) => {
+      const card = overviewRoot.querySelector(`[data-action-card="${rule.key}"]`);
+      if (!card) {
+        return;
+      }
+      const button = card.querySelector("[data-action-button]");
+      const badge = card.querySelector("[data-action-badge]");
+
+      const isLocked = rule.lockedStatuses.includes(normalizedStatus);
+
+      card.classList.toggle("cursor-not-allowed", isLocked);
+      if (button) {
+        if (isLocked) {
+          button.classList.add(...lockedStateClasses);
+          button.classList.remove(...unlockedButtonClasses);
+          button.classList.add(...lockedButtonClasses);
+          button.setAttribute("aria-disabled", "true");
+        } else {
+          button.classList.remove(...lockedStateClasses);
+          button.classList.remove(...lockedButtonClasses);
+          button.classList.add(...unlockedButtonClasses);
+          button.removeAttribute("aria-disabled");
+        }
+      }
+      if (badge) {
+        const showBadge = (text, addClasses = [], removeClasses = []) => {
+          badge.style.display = text ? "inline-flex" : "none";
+          badge.textContent = text || "";
+          if (removeClasses.length) {
+            badge.classList.remove(...removeClasses);
+          }
+          if (addClasses.length) {
+            badge.classList.add(...addClasses);
+          }
+        };
+
+        if (rule.key === "sort") {
+          if (normalizedStatus === "SORT_VALIDATE") {
+            showBadge("Action required", ["bg-primary/10", "text-primary"], ["bg-border-light", "text-text-secondary-light", "dark:bg-border-dark"]);
+          } else if (isLocked) {
+            showBadge("Locked", ["bg-border-light", "text-text-secondary-light", "dark:bg-border-dark"], ["bg-primary/10", "text-primary"]);
+          } else {
+            showBadge("", [], ["bg-primary/10", "text-primary", "bg-border-light", "text-text-secondary-light", "dark:bg-border-dark"]);
+          }
+        } else {
+          if (isLocked) {
+            showBadge("Locked", ["bg-border-light", "text-text-secondary-light", "dark:bg-border-dark"], ["bg-primary/10", "text-primary"]);
+          } else {
+            showBadge("", [], ["bg-primary/10", "text-primary", "bg-border-light", "text-text-secondary-light", "dark:bg-border-dark"]);
+          }
+        }
+      }
+    });
+  };
 
   applyBreadcrumb();
 

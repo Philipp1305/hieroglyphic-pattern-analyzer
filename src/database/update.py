@@ -1,6 +1,7 @@
 from typing import Any, Sequence
 from src.database.connect import connect
 
+
 def run_update(query: str, params: Sequence[Any] | None = None) -> int:
     """
     Execute an UPDATE statement and return the number of affected rows.

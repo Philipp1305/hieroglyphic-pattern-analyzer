@@ -14,8 +14,6 @@ An interdisciplinary project analyzing recurring sequences and patterns in Egypt
 - [Database Schema](#database-schema)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Core Components](#core-components)
-- [API Reference](#api-reference)
 - [Development](#development)
 - [Acknowledgements](#acknowledgements)
 

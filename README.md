@@ -197,7 +197,7 @@ erDiagram
     }
     
     T_GLYPHES_SORTED {
-        int id_glyph PK_FK
+        int id_glyph PK
         int v_column
         int v_row
     }

@@ -2,6 +2,7 @@
 
 import sys
 import io
+import argparse
 from PIL import Image
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -31,6 +32,54 @@ def group_into_columns(items, tolerance=100.0, x_idx=1):
 def get_glyph_ids(column):
     """Extract glyph IDs from a column."""
     return set([item[0] for item in column])
+
+
+def get_column_bounds(column):
+    """Get bounding box for a column."""
+    xs = [item[3] for item in column]
+    ys = [item[4] for item in column]
+    min_x = min(xs)
+    max_x = max([item[3] + item[5] for item in column])
+    min_y = min(ys)
+    max_y = max([item[4] + item[6] for item in column])
+    return min_x, min_y, max_x, max_y
+
+
+def draw_column_visualization(ax, img, column, col_idx, method_name, diff_ids, has_diff):
+    """Draw a single column visualization with difference highlighting."""
+    if not column:
+        ax.text(0.5, 0.5, f"Col {col_idx}\nEmpty", ha='center', va='center', fontsize=12)
+        ax.axis('off')
+        return
+    
+    # Get bounds and crop
+    min_x, min_y, max_x, max_y = get_column_bounds(column)
+    crop = img.crop((min_x, min_y, max_x, max_y))
+    
+    # Display
+    ax.imshow(crop)
+    title_color = ('red' if method_name == 'BBOX' else 'blue') if has_diff else 'black'
+    ax.set_title(f"Col {col_idx} - {method_name}\n{len(column)} glyphs",
+                 fontsize=10, fontweight='bold', color=title_color)
+    ax.axis('off')
+    
+    # Draw boxes
+    diff_color = 'red' if method_name == 'BBOX' else 'blue'
+    for item in column:
+        glyph_id = item[0]
+        x, y, w, h = item[3], item[4], item[5], item[6]
+        x_adj, y_adj = x - min_x, y - min_y
+        
+        # Green box for all glyphs
+        ax.add_patch(patches.Rectangle((x_adj, y_adj), w, h,
+                                       linewidth=1, edgecolor='green',
+                                       facecolor='none', alpha=0.5))
+        
+        # Colored overlay for differences
+        if glyph_id in diff_ids:
+            ax.add_patch(patches.Rectangle((x_adj, y_adj), w, h,
+                                           linewidth=2, edgecolor=diff_color,
+                                           facecolor='none', alpha=0.9))
 
 
 def compare_all_columns(image_id, tolerance=100.0):
@@ -166,91 +215,9 @@ def compare_all_columns(image_id, tolerance=100.0):
                 ax_bbox = axes[0, plot_idx]
                 ax_center = axes[1, plot_idx]
             
-            # BBOX visualization
-            if bbox_col:
-                xs = [item[3] for item in bbox_col]
-                ys = [item[4] for item in bbox_col]
-                min_x = min(xs)
-                max_x = max([item[3] + item[5] for item in bbox_col])
-                min_y = min(ys)
-                max_y = max([item[4] + item[6] for item in bbox_col])
-                
-                crop_bbox = img.crop((min_x, min_y, max_x, max_y))
-                
-                ax_bbox.imshow(crop_bbox)
-                title_color = 'red' if has_diff else 'black'
-                ax_bbox.set_title(f"Col {col_idx} - BBOX\n{len(bbox_col)} glyphs", 
-                                 fontsize=10, fontweight='bold', color=title_color)
-                ax_bbox.axis('off')
-                
-                # Draw ALL boxes - green for all, red overlay for differences
-                for item in bbox_col:
-                    glyph_id = item[0]
-                    x, y, w, h = item[3], item[4], item[5], item[6]
-                    x_adj = x - min_x
-                    y_adj = y - min_y
-                    
-                    # First draw green box for all glyphs
-                    rect_green = patches.Rectangle(
-                        (x_adj, y_adj), w, h,
-                        linewidth=1, edgecolor='green', facecolor='none', alpha=0.5
-                    )
-                    ax_bbox.add_patch(rect_green)
-                    
-                    # Then overlay red box if it's a difference
-                    if glyph_id in only_in_bbox:
-                        rect_red = patches.Rectangle(
-                            (x_adj, y_adj), w, h,
-                            linewidth=2, edgecolor='red', facecolor='none', alpha=0.9
-                        )
-                        ax_bbox.add_patch(rect_red)
-            else:
-                ax_bbox.text(0.5, 0.5, f"Col {col_idx}\nEmpty", 
-                                       ha='center', va='center', fontsize=12)
-                ax_bbox.axis('off')
-            
-            # CENTER visualization
-            if center_col:
-                xs = [item[3] for item in center_col]
-                ys = [item[4] for item in center_col]
-                min_x = min(xs)
-                max_x = max([item[3] + item[5] for item in center_col])
-                min_y = min(ys)
-                max_y = max([item[4] + item[6] for item in center_col])
-                
-                crop_center = img.crop((min_x, min_y, max_x, max_y))
-                
-                ax_center.imshow(crop_center)
-                title_color = 'blue' if has_diff else 'black'
-                ax_center.set_title(f"Col {col_idx} - CENTER\n{len(center_col)} glyphs", 
-                                   fontsize=10, fontweight='bold', color=title_color)
-                ax_center.axis('off')
-                
-                # Draw ALL boxes - green for all, blue overlay for differences
-                for item in center_col:
-                    glyph_id = item[0]
-                    x, y, w, h = item[3], item[4], item[5], item[6]
-                    x_adj = x - min_x
-                    y_adj = y - min_y
-                    
-                    # First draw green box for all glyphs
-                    rect_green = patches.Rectangle(
-                        (x_adj, y_adj), w, h,
-                        linewidth=1, edgecolor='green', facecolor='none', alpha=0.5
-                    )
-                    ax_center.add_patch(rect_green)
-                    
-                    # Then overlay blue box if it's a difference
-                    if glyph_id in only_in_center:
-                        rect_blue = patches.Rectangle(
-                            (x_adj, y_adj), w, h,
-                            linewidth=2, edgecolor='blue', facecolor='none', alpha=0.9
-                        )
-                        ax_center.add_patch(rect_blue)
-            else:
-                ax_center.text(0.5, 0.5, f"Col {col_idx}\nEmpty", 
-                                       ha='center', va='center', fontsize=12)
-                ax_center.axis('off')
+            # Draw both methods using helper function
+            draw_column_visualization(ax_bbox, img, bbox_col, col_idx, 'BBOX', only_in_bbox, has_diff)
+            draw_column_visualization(ax_center, img, center_col, col_idx, 'CENTER', only_in_center, has_diff)
         
         plt.suptitle(f"Image {image_id} - Columns {start_col}-{end_col-1} (Green=all glyphs, Red=bbox only, Blue=center only)", 
                      fontsize=14, fontweight='bold')
@@ -268,25 +235,16 @@ def compare_all_columns(image_id, tolerance=100.0):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python -m src.compare_all_columns <image_id> [--tolerance N]")
-        print("Examples:")
-        print("  python -m src.compare_all_columns 2")
-        print("  python -m src.compare_all_columns 2 --tolerance 150")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description="Compare bbox vs center column sorting methods visually",
+        epilog="Examples:\n"
+               "  python -m src.compare_all_columns 2\n"
+               "  python -m src.compare_all_columns 2 --tolerance 150",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument('image_id', type=int, help='Database ID of the papyrus image')
+    parser.add_argument('--tolerance', type=float, default=100.0,
+                       help='Column grouping tolerance (default: 100.0)')
     
-    tolerance = 100.0
-    args = []
-    
-    i = 1
-    while i < len(sys.argv):
-        arg = sys.argv[i]
-        if arg == "--tolerance" and i + 1 < len(sys.argv):
-            tolerance = float(sys.argv[i + 1])
-            i += 2
-        else:
-            args.append(arg)
-            i += 1
-    
-    image_id = int(args[0])
-    compare_all_columns(image_id, tolerance)
+    args = parser.parse_args()
+    compare_all_columns(args.image_id, args.tolerance)

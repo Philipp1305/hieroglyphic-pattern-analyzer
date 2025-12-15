@@ -27,7 +27,7 @@ An interdisciplinary project analyzing recurring sequences and patterns in Egypt
 
 ### What This Tool Does
 
-1. **Reconstructs reading order** from 2D hieroglyphic annotations using spatial coordinates
+1. **Reconstructs reading order** from 2D hieroglyphic annotations using center of gravity spatial positioning
 2. **Detects recurring patterns** in hieroglyphic sequences using n-gram analysis and suffix trees
 3. **Visualizes results** on the original papyrus images through an interactive web interface
 
@@ -120,13 +120,14 @@ flowchart TD
     
     subgraph Stage3["3. Reading Order"]
         Fetch[Fetch glyphs<br/>sort.py]
-        SortX[Sort by X]
+        CalcCenter[Calculate center of gravity]
+        SortX[Sort by X center]
         GroupCol[Group columns]
-        SortY[Sort by Y]
+        SortY[Sort by Y center]
         InsertSort[Insert T_GLYPHES_SORTED]
         Linear[Linear sequence]
         
-        Fetch --> SortX --> GroupCol --> SortY --> InsertSort --> Linear
+        Fetch --> CalcCenter --> SortX --> GroupCol --> SortY --> InsertSort --> Linear
     end
     
     Stage3 --> Stage4
@@ -408,7 +409,7 @@ hieroglyphic-pattern-analyzer/
 **Completed**
 - [x] Database schema design
 - [x] COCO JSON parsing
-- [x] Reading order algorithm
+- [x] Reading order algorithm (center of gravity method)
 - [x] Column visualization
 - [x] N-gram analysis
 - [x] Flask web server
@@ -420,6 +421,7 @@ hieroglyphic-pattern-analyzer/
 - [ ] Frontend dynamic data loading
 
 **Planned**
+- [ ] Manual correction interface for sorting errors
 - [ ] String matching UI
 - [ ] Fuzzy matching for scribal variations
 

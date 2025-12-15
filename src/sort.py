@@ -11,10 +11,9 @@ def sort_and_insert(
     image_id: int,
     tolerance: float,
     reading_direction: str = "ltr",
-    method: str = "bbox",
     preview: bool = False,
 ):
-    """Sort glyphs and optionally insert into T_GLYPHES_SORTED."""
+    """Sort glyphs using center of gravity method and optionally insert into T_GLYPHES_SORTED."""
     
     # Get glyphs from database
     rows = run_select(
@@ -26,15 +25,9 @@ def sort_and_insert(
     if not rows:
         return 0, {}
     
-    # Calculate coordinates based on method
-    if method == "center":
-        # Use center of gravity: (x + width/2, y + height/2)
-        items = [(r[0], r[1], r[2], r[3] + r[5]/2, r[4] + r[6]/2, r[5], r[6]) for r in rows]
-        x_idx, y_idx = 3, 4
-    else:
-        # Use top-left corner (bbox_x, bbox_y)
-        items = rows
-        x_idx, y_idx = X_IDX, Y_IDX
+    # Use center of gravity: (x + width/2, y + height/2)
+    items = [(r[0], r[1], r[2], r[3] + r[5]/2, r[4] + r[6]/2, r[5], r[6]) for r in rows]
+    x_idx, y_idx = 3, 4
     
     # Sort by x, then y
     items = sorted(items, key=lambda r: (r[x_idx], r[y_idx]))
@@ -93,20 +86,13 @@ if __name__ == "__main__":
     import sys
     
     # Parse arguments
-    method = "bbox"
     preview = False
     args = []
     
     i = 1
     while i < len(sys.argv):
         arg = sys.argv[i]
-        if arg == "--method" and i + 1 < len(sys.argv):
-            method = sys.argv[i + 1]
-            i += 2
-        elif arg.startswith("--method="):
-            method = arg.split("=")[1]
-            i += 1
-        elif arg == "--preview":
+        if arg == "--preview":
             preview = True
             i += 1
         else:
@@ -114,11 +100,11 @@ if __name__ == "__main__":
             i += 1
     
     if len(args) < 1:
-        print("Usage: python -m src.sort <image_id> [tolerance] [--method bbox|center] [--preview]")
+        print("Usage: python -m src.sort <image_id> [tolerance] [--preview]")
         print("Examples:")
         print("  python -m src.sort 2")
-        print("  python -m src.sort 2 --method center --preview")
-        print("  python -m src.sort 2 150 --method center")
+        print("  python -m src.sort 2 --preview")
+        print("  python -m src.sort 2 150")
         sys.exit(1)
     
     image_id = int(args[0])
@@ -127,14 +113,14 @@ if __name__ == "__main__":
     rows = run_select("SELECT reading_direction FROM T_IMAGES WHERE id = %s", (image_id,))
     reading_dir = "rtl" if (rows and rows[0][0] == 1) else "ltr"
     
-    count, col_stats = sort_and_insert(image_id, tolerance, reading_dir, method, preview)
+    count, col_stats = sort_and_insert(image_id, tolerance, reading_dir, preview)
     
     if preview:
-        print(f"\nPreview mode (method={method}, tolerance={tolerance})")
+        print(f"\nPreview mode (center of gravity, tolerance={tolerance})")
         print(f"Total glyphs: {count}")
         print(f"Columns: {len(col_stats)}")
         print(f"\nColumn distribution:")
         for col in sorted(col_stats.keys()):
             print(f"  Column {col}: {col_stats[col]} glyphs")
     else:
-        print(f"Sorted {count} glyphs for image {image_id} (method={method})")
+        print(f"Sorted {count} glyphs for image {image_id} using center of gravity method")

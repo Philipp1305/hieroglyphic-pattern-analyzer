@@ -160,11 +160,11 @@ execute function SET_T_GLYPHES_RAW_ID();
 
 -- TABLE
 create table T_GLYPHES_SORTED(
-	id_glyph	integer not null,
-	column		integer not null,
-	row			integer not null,
-	constraint	T_GLYPHES_SORTED_PK primary key (id_glyph, column, row)
-	constraint 	T_GLYPHES_SORTED_FK foreign key (id_glyph) references T_GLYPHES_RAW(id)
+    id_glyph    integer not null,
+    v_column    integer not null, -- Changed from 'column'
+    v_row       integer not null,    -- Changed from 'row'
+    constraint  T_GLYPHES_SORTED_PK primary key (id_glyph, v_column, v_row),
+    constraint  T_GLYPHES_SORTED_FK foreign key (id_glyph) references T_GLYPHES_RAW(id)
 );
 
 -- COMMENTS
@@ -172,9 +172,9 @@ comment on table T_GLYPHES_SORTED
 is 'stores the sorted hieroglyphs positions after applying the sorting algorithm';
 comment on column t_glyphes_sorted.id_glyph
 is 'Foreign Key to T_GLYPHES_RAW table';
-comment on column t_glyphes_sorted.column
+comment on column t_glyphes_sorted.v_column
 is 'column position after sorting';
-comment on column t_glyphes_sorted.row
+comment on column t_glyphes_sorted.v_row
 is 'row position after sorting';
 
 ------------------------------------------------------------------

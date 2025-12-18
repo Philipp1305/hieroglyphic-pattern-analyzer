@@ -1,25 +1,153 @@
-<div class="relative flex min-h-screen w-full flex-col" id="sort-root">
-    {% include 'components/navbar.html' %}
-    <main class="flex-1">
-        <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-            <div class="flex flex-col gap-8">
-                <div
-                    class="rounded-xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-6 shadow-sm">
-                    <div class="flex flex-col gap-3">
-                        <p class="text-4xl font-black leading-tight tracking-[-0.033em]">Sort</p>
-                        <p
-                            class="text-base font-normal leading-normal text-text-secondary-light dark:text-text-secondary-dark">
-                            Here you will sort the hieroglyphes.
-                        </p>
+<div class="flex h-screen flex-col bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark" data-sort-root data-image-id="{{ image_id or '' }}">
+    <header class="w-full border-b border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark h-16">
+        <div class="grid h-full w-full grid-cols-3 items-center px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-start">
+                <a href="{% if image_id %}{{ url_for('site.overview', id=image_id) }}{% else %}{{ url_for('site.overview') }}{% endif %}"
+                   class="inline-flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark px-4 py-2 text-sm font-semibold transition-colors hover:border-primary hover:text-primary">
+                    <span class="material-symbols-outlined text-base">arrow_back</span>
+                    Back to overview
+                </a>
+            </div>
+            <div class="flex items-center justify-center gap-3">
+                <div class="size-8"></div>
+                <h2 class="text-2xl font-bold text-primary leading-tight tracking-[-0.015em]" style="font-family: 'Caesar Dressing', cursive;">GlyPat</h2>
+            </div>
+            <div class="flex items-center justify-end gap-3">
+                <button id="themeToggle" type="button"
+                        class="inline-flex items-center justify-center rounded-full border border-border-light dark:border-border-dark p-2 text-text-light dark:text-text-dark transition-colors hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        aria-pressed="false">
+                    <span class="sr-only">Toggle color theme</span>
+                    <span class="material-symbols-outlined text-xl leading-none dark:hidden">dark_mode</span>
+                    <span class="material-symbols-outlined hidden text-xl leading-none dark:inline">light_mode</span>
+                </button>
+            </div>
+        </div>
+    </header>
+    <main class="flex-1 overflow-hidden min-h-0">
+        <div class="flex h-full">
+            <!-- Left rail -->
+            <aside class="w-[360px] flex-shrink-0 border-r border-border-light dark:border-border-dark bg-card-light/90 dark:bg-card-dark/80 backdrop-blur flex flex-col overflow-hidden">
+                <div class="p-4 border-b border-border-light/70 dark:border-border-dark/70 space-y-4">
+                    <div>
+                        <p class="text-lg font-bold text-text-light dark:text-text-dark" data-sort-image-name>{{ image_id or '—' }}</p>
+                        <p class="text-xs text-text-secondary-light dark:text-text-secondary-dark" data-sort-image-id>ID #{{ image_id or '—' }}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div class="rounded-lg border border-border-light dark:border-border-dark p-3 bg-white/70 dark:bg-gray-900/40">
+                            <p class="text-xs uppercase tracking-widest text-text-secondary-light dark:text-text-secondary-dark">Reading direction</p>
+                            <p class="font-semibold text-text-light dark:text-text-dark" data-sort-reading>—</p>
+                        </div>
+                        <div class="rounded-lg border border-border-light dark:border-border-dark p-3 bg-white/70 dark:bg-gray-900/40">
+                            <p class="text-xs uppercase tracking-widest text-text-secondary-light dark:text-text-secondary-dark">Current tolerance</p>
+                            <p class="font-semibold text-text-light dark:text-text-dark" data-sort-tolerance>—</p>
+                        </div>
                     </div>
                 </div>
-                <div
-                    class="rounded-lg border border-dashed border-border-light dark:border-border-dark bg-background-light/60 dark:bg-background-dark/60 p-6 text-sm text-text-secondary-light dark:text-text-secondary-dark">
-                    <p class="font-semibold mb-2">!! TODO !!</p>
-                    <ul class="list-disc space-y-1 pl-5">
-                    </ul>
+                <div class="flex-1 flex flex-col overflow-hidden">
+                    <div class="px-4 py-3 border-b border-border-light/70 dark:border-border-dark/70 bg-card-light/80 dark:bg-card-dark/80 flex flex-col gap-2">
+                        <p class="text-xs uppercase tracking-widest text-text-secondary-light dark:text-text-secondary-dark font-semibold">Sorting workflow</p>
+                        <div class="flex gap-2" role="tablist">
+                            <button data-sort-tab="auto" aria-selected="true"
+                                class="flex-1 rounded-lg border border-primary bg-primary/10 px-3 py-2 text-sm font-semibold text-primary transition-colors">
+                                Automatic sorting
+                            </button>
+                            <button data-sort-tab="manual" aria-selected="false"
+                                class="flex-1 rounded-lg border border-border-light dark:border-border-dark px-3 py-2 text-sm font-semibold text-text-secondary-light dark:text-text-secondary-dark transition-colors">
+                                Manual sorting
+                            </button>
+                        </div>
+                    </div>
+                    <div data-sort-panel="auto" class="flex-1 overflow-hidden flex flex-col">
+                        <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                            <div class="rounded-lg border border-border-light dark:border-border-dark p-4 bg-white/80 dark:bg-gray-900/40 space-y-3">
+                                <h3 class="text-sm font-semibold text-text-light dark:text-text-dark">Automatic sorting</h3>
+                                <label class="flex flex-col gap-2">
+                                    <span class="text-xs uppercase tracking-widest text-text-secondary-light dark:text-text-secondary-dark">Tolerance (px)</span>
+                                    <div class="flex items-center gap-3">
+                                        <input type="range" min="1" max="1000" step="1" value="100" class="flex-1 accent-primary" data-sort-tolerance-input>
+                                        <input type="number" min="1" max="1000" step="1" class="w-20 rounded-lg border border-border-light dark:border-border-dark bg-white/80 dark:bg-gray-900/40 px-2 py-1 text-sm text-text-light dark:text-text-dark" data-sort-tolerance-input-field>
+                                    </div>
+                                </label>
+                                <div class="flex flex-col gap-2">
+                                    <button type="button" class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-border-light dark:border-border-dark px-3 py-2 text-sm font-semibold text-text-light dark:text-text-dark hover:border-primary hover:text-primary transition-colors" data-sort-measure-btn>
+                                        <span class="material-symbols-outlined text-base">straighten</span>
+                                        <span data-sort-measure-label>Measure tolerance on image</span>
+                                    </button>
+                                    <button type="button" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-white px-3 py-2 text-sm font-semibold shadow-primary/20 shadow hover:bg-primary/90 transition-colors" data-sort-preview-run>
+                                        <span class="material-symbols-outlined text-base text-white/90">visibility</span>
+                                        Preview run
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4 border-t border-border-light/70 dark:border-border-dark/70 bg-card-light/95 dark:bg-card-dark/90">
+                            <div class="rounded-lg border border-dashed border-amber-400 px-3 py-2 bg-amber-50/60 dark:bg-amber-500/10 text-xs text-amber-700 dark:text-amber-300 mb-3">
+                                Preview the automatic output before committing the results back to the glyph table.
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button class="col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-white px-3 py-2 text-sm font-semibold shadow-primary/20 shadow hover:bg-primary/90">
+                                    <span class="material-symbols-outlined text-base">save</span>
+                                    Apply sorting
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div data-sort-panel="manual" class="hidden flex-1 overflow-hidden flex flex-col">
+                        <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-xs uppercase tracking-widest text-text-secondary-light dark:text-text-secondary-dark font-semibold">Column overview</h4>
+                                <button type="button" class="inline-flex items-center gap-1 rounded-full border border-border-light dark:border-border-dark px-3 py-1 text-[11px] font-semibold text-text-secondary-light dark:text-text-secondary-dark hover:border-primary hover:text-primary transition-colors" data-sort-clear-selection>
+                                    <span class="material-symbols-outlined text-sm leading-none">deselect</span>
+                                    Unselect
+                                </button>
+                            </div>
+                            <div class="space-y-2" data-sort-columns>
+                                <p class="text-xs text-text-secondary-light dark:text-text-secondary-dark">Sorting data not loaded yet.</p>
+                            </div>
+                        </div>
+                        <div class="p-4 border-t border-border-light/70 dark:border-border-dark/70 bg-card-light/95 dark:bg-card-dark/90">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button class="col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-white px-3 py-2 text-sm font-semibold shadow-primary/20 shadow hover:bg-primary/90">
+                                    <span class="material-symbols-outlined text-base">save</span>
+                                    Apply sorting
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </aside>
+            <!-- Workspace -->
+            <section class="flex-1 bg-background-light dark:bg-background-dark p-4 flex flex-col gap-4 relative">
+                <div class="rounded-xl border border-border-light dark:border-border-dark bg-card-light/80 dark:bg-card-dark/80 px-4 py-4 space-y-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-[11px] font-mono text-primary bg-primary/10 px-2 py-0.5 rounded" data-sort-range-label>Selected Column: —</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button class="inline-flex items-center justify-center rounded-full border border-border-light dark:border-border-dark size-10 text-text-secondary-light dark:text-text-secondary-dark hover:border-primary hover:text-primary disabled:opacity-40 disabled:pointer-events-none" data-sort-nav="prev" aria-label="View previous columns" disabled>
+                            <span class="material-symbols-outlined text-xl">chevron_left</span>
+                        </button>
+                        <div class="h-16 flex-1 rounded-lg border border-border-light dark:border-border-dark bg-white/80 dark:bg-gray-900/40 relative overflow-hidden" data-sort-column-chart>
+                            <div class="flex h-full w-full items-end gap-[2px] px-2 pb-2" data-sort-column-bars></div>
+                        </div>
+                        <button class="inline-flex items-center justify-center rounded-full border border-border-light dark:border-border-dark size-10 text-text-secondary-light dark:text-text-secondary-dark hover:border-primary hover:text-primary disabled:opacity-40 disabled:pointer-events-none" data-sort-nav="next" aria-label="View next columns" disabled>
+                            <span class="material-symbols-outlined text-xl">chevron_right</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark shadow-inner relative overflow-hidden">
+                    <canvas class="absolute inset-0 w-full h-full cursor-crosshair" data-sort-canvas></canvas>
+                    <div class="absolute inset-0 flex items-center justify-center text-xs text-text-secondary-light dark:text-text-secondary-dark bg-card-light/60 dark:bg-card-dark/60 backdrop-blur-sm hidden pointer-events-none" data-sort-canvas-message>Loading viewer…</div>
+                </div>
+                <div class="absolute inset-0 z-20 hidden flex items-center justify-center bg-background-light/85 dark:bg-background-dark/80 backdrop-blur-sm" data-sort-loading>
+                    <div class="flex flex-col items-center gap-3 text-text-secondary-light dark:text-text-secondary-dark">
+                        <div class="relative flex h-12 w-12">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                            <span class="relative inline-flex h-12 w-12 rounded-full bg-primary/70"></span>
+                        </div>
+                        <p class="text-sm font-semibold tracking-wide uppercase">Loading workspace…</p>
+                    </div>
+                </div>
+            </section>
         </div>
     </main>
 </div>

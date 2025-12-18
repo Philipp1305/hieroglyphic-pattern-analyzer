@@ -24,3 +24,4 @@ clean:
 	find . -type d -name '__pycache__' -prune -exec rm -rf {} +
 	find . -type d -name '.mypy_cache' -prune -exec rm -rf {} +
 	find . -name '.DS_Store' -exec rm -rf {} +
+	find . -name '.ruff_cache' -exec rm -rf {} +

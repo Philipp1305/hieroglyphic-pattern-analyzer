@@ -51,21 +51,24 @@
                 </aside>
                 <div class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-6 shadow-lg lg:col-span-3">
                     <div class="grid gap-4 md:grid-cols-3">
-                        <div class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark/70 p-5 flex h-full flex-col gap-4 cursor-not-allowed" data-action-card="sort">
+                        {% set sort_disabled = not image_id %}
+                        <div class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark/70 p-5 flex h-full flex-col gap-4 {% if sort_disabled %}opacity-70{% else %}hover:border-primary transition{% endif %}" data-action-card="sort">
                             <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-wide">
                                 <p class="text-text-secondary-light dark:text-text-secondary-dark">Sorting View</p>
-                                <span class="rounded-full bg-border-light px-2 py-1 text-text-secondary-light text-[10px] dark:bg-border-dark" data-action-badge>Locked</span>
+                                <span class="rounded-full px-2 py-1 text-[10px] {% if sort_disabled %}bg-border-light text-text-secondary-light dark:bg-border-dark{% else %}bg-primary/10 text-primary{% endif %}" data-action-badge>
+                                    {% if sort_disabled %}Select Image{% else %}Ready{% endif %}
+                                </span>
                             </div>
                             <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">
                                 Computes the columns and rows to determine the reading direction.
                             </p>
                             <div class="mt-auto flex justify-end">
-                                <button type="button"
-                                    class="pointer-events-none inline-flex items-center justify-center gap-2 rounded-full border border-border-light dark:border-border-dark px-5 py-3 text-sm font-semibold text-text-secondary-light dark:text-text-secondary-dark opacity-60 cursor-not-allowed border-dashed"
-                                    aria-disabled="true" data-action-button>
+                                <a href="{% if sort_disabled %}#{% else %}{{ url_for('site.sort_page') }}?id={{ image_id }}{% endif %}"
+                                    class="inline-flex items-center justify-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold {% if sort_disabled %}text-text-secondary-light dark:text-text-secondary-dark border-border-light dark:border-border-dark cursor-not-allowed pointer-events-none border-dashed{% else %}border-primary text-primary hover:bg-primary/10{% endif %}"
+                                    aria-disabled="{{ 'true' if sort_disabled else 'false' }}" data-action-button>
                                     <span class="material-symbols-outlined text-base">sort</span>
                                     Sorting View
-                                </button>
+                                </a>
                             </div>
                         </div>
                         <div class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark/70 p-5 flex h-full flex-col gap-4 cursor-not-allowed" data-action-card="ngrams">

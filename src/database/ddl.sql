@@ -11,7 +11,8 @@ create table T_IMAGES(
 	file_name			text 	not null,
 	mimetype			text 	not null,
 	reading_direction 	numeric(1,0) default 0 not null,
-	id_status 			number not null,
+	id_status 			integer not null,
+	sort_tolerance		integer not null,
 	constraint			T_IMAGES_PK primary key (id),
 	constraint 			T_IMAGES_FK foreign key(id_status) references T_IMAGES_STATUS(id)
 );
@@ -183,9 +184,9 @@ is 'row position after sorting';
 
 -- TABLE
 create table T_IMAGES_STATUS(
-	id integer 	not null,
-	status text	not null,
-	status_code not null,
+	id 			integer not null,
+	status 		text	not null,
+	status_code text	not null,
 	constraint 	T_IMAGES_STATUS_PK primary key (id),
 	constraint 	T_IMAGES_STATUS_UQ unique (status_code)
 );

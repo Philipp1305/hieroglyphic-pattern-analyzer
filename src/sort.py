@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Tuple
 
-from src.database.tools import delete, insert, select
+from src.database.tools import insert, select
 
 X_IDX = 3
 Y_IDX = 4
@@ -10,8 +10,8 @@ def run_sort(
     image_id: int,
     tolerance: float = 100,
     reading_direction: str = "ltr",
-    insert_to_db: bool = False,
-):
+    insert_to_db: bool = True,
+) -> Tuple[int, Dict[int, int]]:
     rows = select(
         """
         SELECT id, id_image, id_gardiner, bbox_x, bbox_y, bbox_width, bbox_height
@@ -27,25 +27,6 @@ def run_sort(
     sorted_rows, column_stats = sort(rows, tolerance, reading_direction)
 
     if insert_to_db and sorted_rows:
-        glyph_ids = [row[0] for row in sorted_rows]
-        check_entries = select(
-            """
-            SELECT 1
-            FROM T_GLYPHES_SORTED
-            WHERE id_glyph = ANY(%s)
-            """,
-            (glyph_ids,),
-        )
-
-        if check_entries:
-            delete(
-                """
-                DELETE FROM T_GLYPHES_SORTED
-                WHERE id_glyph = ANY(%s)
-                """,
-                (glyph_ids,),
-            )
-
         insert(
             """
             INSERT INTO T_GLYPHES_SORTED (id_glyph, v_column, v_row)
@@ -55,7 +36,7 @@ def run_sort(
             many=True,
         )
 
-    return sorted_rows
+    return len(sorted_rows), column_stats
 
 
 def sort(
@@ -129,7 +110,12 @@ if __name__ == "__main__":
     rows = select("SELECT reading_direction FROM T_IMAGES WHERE id = %s", (image_id,))
     reading_dir = "rtl" if (rows and rows[0][0] == 1) else "ltr"
 
-    count, col_stats = run_sort(image_id, tolerance, reading_dir, preview)
+    count, col_stats = run_sort(
+        image_id,
+        tolerance,
+        reading_dir,
+        insert_to_db=not preview,
+    )
 
     if preview:
         print(f"\nPreview mode (center of gravity, tolerance={tolerance})")

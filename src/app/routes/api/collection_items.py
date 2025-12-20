@@ -17,6 +17,7 @@ def list_collection_items():
                 "image_src": item.image_src,
                 "status_label": item.status_label,
                 "status_variant": item.status_variant,
+                "status_code": item.status_code,
             }
             for item in items
         ]

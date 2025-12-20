@@ -113,7 +113,7 @@ create table T_GLYPHES_RAW(
 	bbox_height double precision not null,
 	bbox_width 	double precision not null,
 	constraint 	T_GLYPHES_RAW_PK primary key (id),
-	constraint	T_GLYPHES_RAW_FK_IMAGE foreign key (id_image) references T_IMAGES(id),
+	constraint	T_GLYPHES_RAW_FK_IMAGE foreign key (id_image) references T_IMAGES(id) on delete cascade,
 	constraint 	T_GLYPHES_RAW_FK_GARDINER foreign key (id_gardiner) references T_GARDINER_CODES(id)
 );
 
@@ -165,7 +165,7 @@ create table T_GLYPHES_SORTED(
     v_column    integer not null, -- Changed from 'column'
     v_row       integer not null,    -- Changed from 'row'
     constraint  T_GLYPHES_SORTED_PK primary key (id_glyph, v_column, v_row),
-    constraint  T_GLYPHES_SORTED_FK foreign key (id_glyph) references T_GLYPHES_RAW(id)
+    constraint  T_GLYPHES_SORTED_FK foreign key (id_glyph) references T_GLYPHES_RAW(id) on delete cascade
 );
 
 -- COMMENTS
@@ -236,3 +236,6 @@ values ('N-Grams computed', 'NGRAMS');
 
 insert into T_IMAGES_STATUS(status, status_code)
 values ('Suffix-Tree computed', 'SUFFIX');
+
+insert into T_IMAGES_STATUS(status, status_code)
+values ('Done', 'DONE');

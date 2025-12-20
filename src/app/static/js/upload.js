@@ -1,9 +1,8 @@
-const socket = io();
-
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("papyrusUploadForm");
     if (!form) return;
 
+    const socket = typeof io === "function" ? io() : null;
     const nameInput = document.getElementById("papyrus-name-input");
     const fileInputs = Array.from(form.querySelectorAll('input[type="file"]'));
     const submitButton = form.querySelector("[data-upload-submit]");
@@ -196,10 +195,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    socket.on("s2c:upload_papyrus:response", (data) => {
-        console.log("Server response:", data);
-        handleUploadResult(data);
-    });
+    if (socket) {
+        socket.on("s2c:upload_papyrus:response", (data) => {
+            console.log("Server response:", data);
+            handleUploadResult(data);
+        });
+    }
     form.reset();
     resetAllFiles();
     updateSubmitState();

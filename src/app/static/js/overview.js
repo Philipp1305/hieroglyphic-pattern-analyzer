@@ -9,6 +9,8 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+  const socket = typeof io === "function" ? io() : null;
+  console.log("[overview] socket ready:", Boolean(socket));
   const titleEl = overviewRoot.querySelector("[data-overview-title]");
   const imageWrapper = overviewRoot.querySelector("[data-overview-image]");
   const imageEl = overviewRoot.querySelector("[data-overview-image-content]");
@@ -41,13 +43,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  const stageOrder = [
+  let stageOrder = [
     { key: "upload", title: "Image uploaded" },
     { key: "json", title: "JSON processed" },
     { key: "sort", title: "Sorting algorithm", pendingSubtitle: "Waiting for confirmation in Sorting View" },
     { key: "ngrams", title: "N-Grams" },
     { key: "suffix", title: "Suffix tree" },
   ];
+  let statusesLoaded = false;
+  let pendingStatusCode = null;
 
   const statusMapping = {
     UPLOAD: { upload: "done", json: "running", sort: "waiting", ngrams: "waiting", suffix: "waiting" },
@@ -56,10 +60,27 @@ document.addEventListener("DOMContentLoaded", () => {
     SORT: { upload: "done", json: "done", sort: "done", ngrams: "running", suffix: "waiting" },
     NGRAMS: { upload: "done", json: "done", sort: "done", ngrams: "done", suffix: "running" },
     SUFFIX: { upload: "done", json: "done", sort: "done", ngrams: "done", suffix: "done" },
+    DONE: { upload: "done", json: "done", sort: "done", ngrams: "done", suffix: "done" },
+  };
+
+  const renderPipelineLoading = () => {
+    if (!pipelineContainer) {
+      return;
+    }
+    pipelineContainer.innerHTML = `
+      <div class="flex items-center justify-center py-16 text-sm text-text-secondary-light dark:text-text-secondary-dark">
+        Loading pipeline…
+      </div>
+    `;
   };
 
   const renderPipeline = (statusCode) => {
     if (!pipelineContainer) {
+      return;
+    }
+    if (!statusesLoaded) {
+      pendingStatusCode = statusCode;
+      renderPipelineLoading();
       return;
     }
     const normalized = (statusCode || "").toString().trim().toUpperCase();
@@ -245,6 +266,101 @@ document.addEventListener("DOMContentLoaded", () => {
   applyBreadcrumb();
 
   const apiUrl = `/api/images/${imageId}?_=${Date.now()}`;
+  const metaUrl = `/api/images/${imageId}/meta?_=${Date.now()}`;
+  const statusUrl = `/api/statuses?_=${Date.now()}`;
+  const autoActionMap = {
+    UPLOAD: { event: "c2s:process_image", needsTolerance: false },
+    JSON: { event: "c2s:start_sorting", needsTolerance: true },
+  };
+  let metaPayload = null;
+  let statusLabels = {};
+  let pageLoaded = false;
+  const triggeredActions = new Set();
+
+  const getNormalizedStatus = (value) =>
+    (value || "").toString().trim().toUpperCase();
+
+  const getStatusLabel = (code, fallback) => {
+    const normalized = getNormalizedStatus(code);
+    return statusLabels[normalized] || fallback;
+  };
+
+  const applyStatusLabels = () => {
+    stageOrder = [
+      { key: "upload", title: getStatusLabel("UPLOAD", "Image uploaded") },
+      { key: "json", title: getStatusLabel("JSON", "JSON processed") },
+      {
+        key: "sort",
+        title: getStatusLabel("SORT_VALIDATE", getStatusLabel("SORT", "Sorting algorithm")),
+        pendingSubtitle: "Waiting for confirmation in Sorting View",
+      },
+      { key: "ngrams", title: getStatusLabel("NGRAMS", "N-Grams") },
+      { key: "suffix", title: getStatusLabel("SUFFIX", "Suffix tree") },
+    ];
+  };
+
+  const maybeStartAutoPipeline = (statusOverride) => {
+    if (!pageLoaded || !metaPayload || !socket) {
+      console.log("[overview] auto pipeline blocked", {
+        pageLoaded,
+        hasMeta: Boolean(metaPayload),
+        hasSocket: Boolean(socket),
+      });
+      return;
+    }
+    const statusCode = getNormalizedStatus(
+      statusOverride ?? metaPayload.status_code
+    );
+    console.log("[overview] auto pipeline status", statusCode);
+    const action = autoActionMap[statusCode];
+    if (!action || triggeredActions.has(action.event)) {
+      console.log("[overview] auto pipeline no action", action);
+      return;
+    }
+    const payload = { image_id: Number(imageId) };
+    if (action.needsTolerance) {
+      const tolerance = Number(metaPayload.tolerance);
+      if (!Number.isFinite(tolerance) || tolerance <= 0) {
+        console.log("[overview] auto pipeline invalid tolerance", metaPayload.tolerance);
+        return;
+      }
+      payload.tolerance = tolerance;
+    }
+    triggeredActions.add(action.event);
+    console.log("[overview] auto pipeline emit", action.event, payload);
+    socket.emit(action.event, payload);
+  };
+
+  if (socket) {
+    socket.on("s2c:start_sorting:response", (data) => {
+      console.log("[overview] s2c:start_sorting:response", data);
+      if (!data || String(data.image_id) !== String(imageId)) {
+        return;
+      }
+      if (data.status === "success") {
+        renderPipeline(data.status_code || "SORT_VALIDATE");
+      }
+    });
+
+    socket.on("s2c:process_image:response", (data) => {
+      console.log("[overview] s2c:process_image:response", data);
+      if (!data || String(data.image_id) !== String(imageId)) {
+        return;
+      }
+      if (data.status === "success") {
+        renderPipeline(data.status_code || "JSON");
+        maybeStartAutoPipeline("JSON");
+      }
+    });
+  }
+
+  window.addEventListener("load", () => {
+    console.log("[overview] window load");
+    pageLoaded = true;
+    maybeStartAutoPipeline();
+  });
+
+  renderPipelineLoading();
 
   fetch(apiUrl, { cache: "no-store" })
     .then((response) => {
@@ -254,6 +370,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return response.json();
     })
     .then((data) => {
+      console.log("[overview] image data loaded", data);
       applyTitle(data.title || `Papyrus #${imageId}`);
       applyImage(data.image);
       renderPipeline(data.status_code);
@@ -264,5 +381,51 @@ document.addEventListener("DOMContentLoaded", () => {
       applyTitle("Papyrus konnte nicht geladen werden");
       renderPipeline();
       hideLoading();
+    });
+
+  fetch(metaUrl, { cache: "no-store" })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Failed to load papyrus metadata");
+      }
+      return response.json();
+    })
+    .then((meta) => {
+      console.log("[overview] meta loaded", meta);
+      metaPayload = meta || {};
+      if (meta && meta.status_code) {
+        renderPipeline(meta.status_code);
+      }
+      maybeStartAutoPipeline();
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+
+  fetch(statusUrl, { cache: "no-store" })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Failed to load status labels");
+      }
+      return response.json();
+    })
+    .then((data) => {
+      const items = data.items || [];
+      statusLabels = items.reduce((acc, item) => {
+        const code = getNormalizedStatus(item.status_code);
+        if (code && !acc[code]) {
+          acc[code] = item.status || "";
+        }
+        return acc;
+      }, {});
+      statusesLoaded = true;
+      applyStatusLabels();
+      const nextStatus =
+        pendingStatusCode ??
+        (metaPayload ? metaPayload.status_code : null);
+      renderPipeline(nextStatus);
+    })
+    .catch((error) => {
+      console.error(error);
     });
 });

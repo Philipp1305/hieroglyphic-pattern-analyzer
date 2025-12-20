@@ -40,3 +40,6 @@ def create_app():
         return {"static_js_files": list_static_js_files()}
 
     return app
+
+
+from .routes.websockets import ws_sort  # noqa: E402,F401

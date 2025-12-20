@@ -3,6 +3,7 @@
         <div class="grid h-full w-full grid-cols-3 items-center px-4 sm:px-6 lg:px-8">
             <div class="flex justify-start">
                 <a href="{% if image_id %}{{ url_for('site.overview', id=image_id) }}{% else %}{{ url_for('site.overview') }}{% endif %}"
+                   data-sort-back
                    class="inline-flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark px-4 py-2 text-sm font-semibold transition-colors hover:border-primary hover:text-primary">
                     <span class="material-symbols-outlined text-base">arrow_back</span>
                     Back to overview
@@ -75,19 +76,25 @@
                                     </button>
                                     <button type="button" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-white px-3 py-2 text-sm font-semibold shadow-primary/20 shadow hover:bg-primary/90 transition-colors" data-sort-preview-run>
                                         <span class="material-symbols-outlined text-base text-white/90">visibility</span>
-                                        Preview run
+                                        Run automatic sorting
                                     </button>
                                 </div>
                             </div>
+                            <div class="rounded-lg border border-dashed border-amber-400 px-3 py-2 bg-amber-50/60 dark:bg-amber-500/10 text-xs text-amber-700 dark:text-amber-300 mb-3 text-center">
+                                Review the automatic sorting output before saving it back to the database.
+                            </div>
                         </div>
                         <div class="p-4 border-t border-border-light/70 dark:border-border-dark/70 bg-card-light/95 dark:bg-card-dark/90">
-                            <div class="rounded-lg border border-dashed border-amber-400 px-3 py-2 bg-amber-50/60 dark:bg-amber-500/10 text-xs text-amber-700 dark:text-amber-300 mb-3">
-                                Preview the automatic output before committing the results back to the glyph table.
-                            </div>
                             <div class="grid grid-cols-2 gap-2">
-                                <button class="col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-white px-3 py-2 text-sm font-semibold shadow-primary/20 shadow hover:bg-primary/90">
-                                    <span class="material-symbols-outlined text-base">save</span>
-                                    Apply sorting
+                                <button type="button" data-sort-apply data-sort-apply-action="stay" class="inline-flex items-center justify-center gap-2 rounded-lg border border-border-light dark:border-border-dark bg-transparent px-3 py-2 text-sm font-semibold text-text-light dark:text-text-dark hover:border-primary hover:text-primary">
+                                    <span data-sort-apply-spinner class="hidden h-4 w-4 animate-spin rounded-full border-2 border-primary/70 border-t-transparent" aria-hidden="true"></span>
+                                    <span data-sort-apply-icon class="material-symbols-outlined text-base">save</span>
+                                    <span data-sort-apply-text>Save</span>
+                                </button>
+                                <button type="button" data-sort-apply data-sort-apply-action="leave" class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-white px-3 py-2 text-sm font-semibold shadow-primary/20 shadow hover:bg-primary/90">
+                                    <span data-sort-apply-spinner class="hidden h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent" aria-hidden="true"></span>
+                                    <span data-sort-apply-icon class="material-symbols-outlined text-base">save</span>
+                                    <span data-sort-apply-text>Save and leave</span>
                                 </button>
                             </div>
                         </div>
@@ -107,9 +114,15 @@
                         </div>
                         <div class="p-4 border-t border-border-light/70 dark:border-border-dark/70 bg-card-light/95 dark:bg-card-dark/90">
                             <div class="grid grid-cols-2 gap-2">
-                                <button class="col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-white px-3 py-2 text-sm font-semibold shadow-primary/20 shadow hover:bg-primary/90">
-                                    <span class="material-symbols-outlined text-base">save</span>
-                                    Apply sorting
+                                <button type="button" data-sort-apply data-sort-apply-action="stay" class="inline-flex items-center justify-center gap-2 rounded-lg border border-border-light dark:border-border-dark bg-transparent px-3 py-2 text-sm font-semibold text-text-light dark:text-text-dark hover:border-primary hover:text-primary">
+                                    <span data-sort-apply-spinner class="hidden h-4 w-4 animate-spin rounded-full border-2 border-primary/70 border-t-transparent" aria-hidden="true"></span>
+                                    <span data-sort-apply-icon class="material-symbols-outlined text-base">save</span>
+                                    <span data-sort-apply-text>Save</span>
+                                </button>
+                                <button type="button" data-sort-apply data-sort-apply-action="leave" class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-white px-3 py-2 text-sm font-semibold shadow-primary/20 shadow hover:bg-primary/90">
+                                    <span data-sort-apply-spinner class="hidden h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent" aria-hidden="true"></span>
+                                    <span data-sort-apply-icon class="material-symbols-outlined text-base">save</span>
+                                    <span data-sort-apply-text>Save and leave</span>
                                 </button>
                             </div>
                         </div>

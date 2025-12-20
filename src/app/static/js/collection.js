@@ -21,16 +21,10 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const statusClass = (variant) => {
-    switch (variant) {
-      case "success":
-        return "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200";
-      case "warning":
-        return "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200";
-      case "error":
-        return "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-200";
-      default:
-        return "bg-slate-200 text-slate-700 dark:bg-slate-600/30 dark:text-slate-200";
+    if (variant === "action") {
+      return "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200";
     }
+    return "bg-primary/10 text-primary border border-primary/20";
   };
 
   const renderCards = (items, emptyMessage = "No collection entries found yet.") => {
@@ -43,7 +37,13 @@ document.addEventListener("DOMContentLoaded", () => {
     cards.className = "grid grid-cols-1 md:grid-cols-2 gap-6";
     cards.innerHTML = items
       .map(
-        (item) => `
+        (item) => {
+          const statusCode = (item.status_code || "").toString().trim().toUpperCase();
+          const isActionRequired = statusCode === "SORT_VALIDATE";
+          const variant = item.status_variant || "info";
+          const mainBadgeClass = statusClass(variant);
+          const statusLabel = item.status_label || "Unknown";
+          return `
         <a class="group flex flex-col overflow-hidden rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark shadow-lg transition-all hover:shadow-xl hover:-translate-y-1"
             href="/overview?id=${encodeURIComponent(item.id)}">
             <div class="aspect-[4/3] overflow-hidden">
@@ -60,14 +60,22 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="p-5 flex flex-col gap-2">
                 <div class="flex items-center justify-between gap-2">
                     <p class="text-base font-semibold truncate">${item.title || "Untitled item"}</p>
-                    <span class="text-xs rounded-full px-2 py-0.5 ${statusClass(item.status_variant)}">
-                        ${item.status_label || "Unknown"}
-                    </span>
+                    <div class="flex flex-wrap items-center gap-2 justify-end">
+                        ${
+                          isActionRequired
+                            ? `<span class="text-[11px] rounded-full px-2 py-0.5 ${statusClass("action")}">Action required</span>`
+                            : ""
+                        }
+                        <span class="text-xs rounded-full px-2 py-0.5 ${mainBadgeClass}">
+                            ${statusLabel}
+                        </span>
+                    </div>
                 </div>
                 <p class="text-xs text-text-secondary-light dark:text-text-secondary-dark">ID #${item.id}</p>
             </div>
         </a>
-    `
+    `;
+        }
       )
       .join("");
 

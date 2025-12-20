@@ -14,8 +14,6 @@
             {% set nav_link_base = "text-sm leading-normal transition-colors" %}
             <a class="{{ nav_link_base }} {% if request.endpoint == 'site.collection' %}font-bold text-primary{% else %}font-medium text-text-light dark:text-text-dark hover:text-primary{% endif %}"
                 href="{{ url_for('site.collection') }}" {% if request.endpoint == 'site.collection' %}aria-current="page" {% endif %}>Collection</a>
-            <a class="{{ nav_link_base }} {% if request.endpoint == 'site.database' %}font-bold text-primary{% else %}font-medium text-text-light dark:text-text-dark hover:text-primary{% endif %}"
-                href="{{ url_for('site.database') }}" {% if request.endpoint == 'site.database' %}aria-current="page" {% endif %}>Database</a>
             <div class="flex items-center gap-3">
                 <a href="{{ url_for('site.upload_page') }}"
                     class="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">

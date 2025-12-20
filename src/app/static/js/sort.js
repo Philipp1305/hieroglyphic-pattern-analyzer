@@ -34,6 +34,9 @@
     const MEASUREMENT_TEXT_BG = "rgba(255, 255, 255, 0.9)";
     const MEASUREMENT_TEXT_COLOR = "rgba(15, 23, 42, 0.95)";
     const MIN_VIEW_SIZE = 50;
+    const ZOOM_IN_FACTOR = 0.93;
+    const ZOOM_OUT_FACTOR = 1.07;
+    const PAN_SENSITIVITY = 0.75;
 
     const sortState = {
         root: null,
@@ -66,6 +69,8 @@
             image: true,
             snapshot: true,
         },
+        lastAutomaticTolerance: null,
+        hasUnsavedChanges: false,
     };
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -77,11 +82,14 @@
         sortState.root = root;
 
         setupTabs(sortState);
-        setupToleranceSlider(root);
+        setupToleranceSlider(root, sortState);
+        setupAutomaticSortingPreview(sortState);
         setupColumnNavigation(sortState);
         setupCanvasInteractions(sortState);
         setupMeasurementTools(sortState);
         setupSelectionClearButton(sortState);
+        setupApplySorting(sortState);
+        setupLeaveWarning(sortState);
         updateLoadingOverlay(sortState);
 
         const imageId = root.dataset.imageId;
@@ -89,7 +97,7 @@
             return;
         }
 
-        loadMetadata(imageId, root);
+        loadMetadata(imageId, root, sortState);
         loadFullImage(imageId, sortState);
         loadSortingSnapshot(imageId, sortState);
 
@@ -141,7 +149,7 @@
         activateTab("auto");
     }
 
-    function setupToleranceSlider(root) {
+    function setupToleranceSlider(root, state) {
         const slider = root.querySelector("[data-sort-tolerance-input]");
         if (!slider) {
             return;
@@ -159,6 +167,157 @@
                 setToleranceValue(root, numericInput.value);
             });
         }
+    }
+
+    function setupAutomaticSortingPreview(state) {
+        const root = state.root;
+        if (!root) {
+            return;
+        }
+        const button = root.querySelector("[data-sort-preview-run]");
+        if (!button) {
+            return;
+        }
+        button.addEventListener("click", () => runAutomaticSortingPreview(state, button));
+    }
+
+    async function runAutomaticSortingPreview(state, button) {
+        const root = state?.root;
+        if (!root) {
+            return;
+        }
+        const imageId = root.dataset.imageId;
+        const tolerance = getToleranceValue(root);
+        if (!imageId || !Number.isFinite(tolerance) || tolerance <= 0) {
+            return;
+        }
+        button.disabled = true;
+        button.classList.add("opacity-60", "pointer-events-none");
+        setLoadingState(state, "snapshot", true);
+        try {
+            const response = await fetch(`/api/sorting/${imageId}/preview`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ tolerance }),
+            });
+            if (!response.ok) {
+                throw new Error(`Request failed (${response.status})`);
+            }
+            const snapshot = await response.json();
+            state.lastAutomaticTolerance = tolerance;
+            applySortingSnapshot(snapshot, state, { markUnsaved: true });
+        } catch (error) {
+            console.error("Failed to run automatic sorting preview", error);
+        } finally {
+            button.disabled = false;
+            button.classList.remove("opacity-60", "pointer-events-none");
+            setLoadingState(state, "snapshot", false);
+        }
+    }
+
+    async function submitSortingSnapshot(state, triggerButton, action = "stay") {
+        const root = state?.root;
+        if (!root) {
+            return;
+        }
+        const imageId = root.dataset.imageId;
+        if (!imageId) {
+            return;
+        }
+        const columnsPayload = normalizeColumnsForRequest(state?.columns);
+        const toleranceValue = state?.lastAutomaticTolerance ?? getToleranceValue(root);
+        const payload = { columns: columnsPayload };
+        if (Number.isFinite(toleranceValue) && toleranceValue > 0) {
+            payload.tolerance = Math.round(toleranceValue);
+        }
+        if ((action || "").toLowerCase() === "leave") {
+            payload.advance_status = true;
+        }
+
+        toggleApplyButtonsLoading(root, true, triggerButton);
+        if (triggerButton) {
+            triggerButton.blur();
+        }
+
+        try {
+            const response = await fetch(`/api/sorting/${imageId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) {
+                throw new Error(`Request failed (${response.status})`);
+            }
+            const result = await response.json();
+            console.log("[sort] apply sorting success", result);
+            setUnsavedChanges(state, false);
+            if ((action || "").toLowerCase() === "leave") {
+                window.location.href = `/overview?id=${imageId}`;
+                return;
+            }
+            loadSortingSnapshot(imageId, state);
+        } catch (error) {
+            console.error("Failed to apply sorting", error);
+        } finally {
+            toggleApplyButtonsLoading(root, false, null);
+        }
+    }
+
+    function normalizeColumnsForRequest(columns) {
+        if (!Array.isArray(columns)) {
+            return [];
+        }
+        return columns.map((column, index) => {
+            const glyphs = Array.isArray(column?.glyph_ids) ? column.glyph_ids : [];
+            const normalizedGlyphs = glyphs
+                .map((glyphId) => {
+                    const numeric = Number.parseInt(glyphId, 10);
+                    return Number.isInteger(numeric) ? numeric : null;
+                })
+                .filter((value) => Number.isInteger(value));
+            const parsedCol = Number.parseInt(column?.col, 10);
+            const colIdx = Number.isInteger(parsedCol) ? parsedCol : index;
+            return {
+                col: colIdx,
+                glyph_ids: normalizedGlyphs,
+            };
+        });
+    }
+
+    function toggleApplyButtonsLoading(root, isLoading, activeButton) {
+        if (!root) {
+            return;
+        }
+        const buttons = root.querySelectorAll("[data-sort-apply]");
+        if (!buttons.length) {
+            return;
+        }
+        buttons.forEach((btn) => {
+            btn.disabled = Boolean(isLoading);
+            btn.classList.toggle("opacity-60", Boolean(isLoading));
+            btn.classList.toggle("pointer-events-none", Boolean(isLoading));
+            const spinner = btn.querySelector("[data-sort-apply-spinner]");
+            const icon = btn.querySelector("[data-sort-apply-icon]");
+            const text = btn.querySelector("[data-sort-apply-text]");
+            const defaultText =
+                btn.dataset.sortApplyDefaultText ||
+                (text && text.textContent ? text.textContent.trim() : "Apply sorting");
+            btn.dataset.sortApplyDefaultText = defaultText;
+            const isActive = Boolean(activeButton && btn === activeButton);
+            if (spinner) {
+                spinner.classList.toggle("hidden", !(isLoading && isActive));
+            }
+            if (icon) {
+                icon.classList.toggle("hidden", Boolean(isLoading && isActive));
+            }
+            if (text) {
+                text.textContent = isLoading && isActive ? "Applying..." : defaultText;
+            }
+        });
     }
 
     function setupMeasurementTools(state) {
@@ -198,6 +357,23 @@
             state.activeColumnIndex = null;
             renderManualColumns(state);
             renderColumnCanvas(state);
+        });
+    }
+
+    function setupApplySorting(state) {
+        const root = state.root;
+        if (!root) {
+            return;
+        }
+        const applyButtons = root.querySelectorAll("[data-sort-apply]");
+        if (!applyButtons.length) {
+            return;
+        }
+        applyButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                const action = button.dataset.sortApplyAction || "stay";
+                submitSortingSnapshot(state, button, action);
+            });
         });
     }
 
@@ -360,7 +536,7 @@
         const relX = pointerX / rect.width;
         const relY = pointerY / rect.height;
 
-        const zoomFactor = event.deltaY < 0 ? 0.85 : 1.15;
+        const zoomFactor = event.deltaY < 0 ? ZOOM_IN_FACTOR : ZOOM_OUT_FACTOR;
         let proposedWidth = view.width * zoomFactor;
         proposedWidth = clamp(proposedWidth, MIN_VIEW_SIZE, imageWidth);
         let scaleApplied = proposedWidth / view.width;
@@ -437,8 +613,8 @@
         if (!rect.width || !rect.height) {
             return;
         }
-        const deltaX = event.clientX - state.panStart.x;
-        const deltaY = event.clientY - state.panStart.y;
+        const deltaX = (event.clientX - state.panStart.x) * PAN_SENSITIVITY;
+        const deltaY = (event.clientY - state.panStart.y) * PAN_SENSITIVITY;
         if (!state.panMoved && (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2)) {
             state.panMoved = true;
         }
@@ -480,7 +656,7 @@
     }
 
     function handleCanvasKeyPan(event, state) {
-        if (!state?.viewWindow || !state.baseImage) {
+        if (!state?.root) {
             return;
         }
         const target = event.target;
@@ -492,49 +668,28 @@
         ) {
             return;
         }
-        let deltaX = 0;
-        let deltaY = 0;
-        const view = state.viewWindow;
-        const imageWidth = state.baseImage.naturalWidth || state.baseImage.width || 1;
-        const imageHeight = state.baseImage.naturalHeight || state.baseImage.height || 1;
-        const stepFactor = event.shiftKey ? 0.35 : 0.15;
-        const stepX = Math.max(5, view.width * stepFactor);
-        const stepY = Math.max(5, view.height * stepFactor);
+        let handled = false;
         switch (event.key) {
             case "ArrowLeft":
-                deltaX = -stepX;
+                if (state.focusIndex > 0) {
+                    state.focusIndex -= 1;
+                    onColumnFocusChange(state);
+                    handled = true;
+                }
                 break;
             case "ArrowRight":
-                deltaX = stepX;
-                break;
-            case "ArrowUp":
-                deltaY = -stepY;
-                break;
-            case "ArrowDown":
-                deltaY = stepY;
+                if (state.columns && state.focusIndex < state.columns.length - 1) {
+                    state.focusIndex += 1;
+                    onColumnFocusChange(state);
+                    handled = true;
+                }
                 break;
             default:
                 return;
         }
-        event.preventDefault();
-
-        const normalizedView = normalizeViewWindow(
-            {
-                x: view.x + deltaX,
-                y: view.y + deltaY,
-                width: view.width,
-                height: view.height,
-            },
-            view.aspectRatio || state.canvasAspectRatio || view.width / Math.max(view.height, 1),
-            imageWidth,
-            imageHeight
-        );
-        state.viewWindow = {
-            ...normalizedView,
-            locked: true,
-            mode: state.mode,
-        };
-        renderColumnCanvas(state);
+        if (handled) {
+            event.preventDefault();
+        }
     }
 
     function findCanvasHotspot(state, event) {
@@ -704,13 +859,13 @@
         return response.json();
     }
 
-    function loadMetadata(imageId, root) {
+    function loadMetadata(imageId, root, state) {
         fetchJson(`/api/images/${imageId}/meta`)
-            .then((meta) => updateMetadata(meta, root, imageId))
+            .then((meta) => updateMetadata(meta, root, imageId, state))
             .catch((error) => console.error("Failed to load metadata", error));
     }
 
-    function updateMetadata(meta, root, fallbackId) {
+    function updateMetadata(meta, root, fallbackId, state) {
         const displayName = meta.title || meta.file_name || `Image #${meta.id ?? fallbackId}`;
         const imageNameEl = root.querySelector("[data-sort-image-name]");
         if (imageNameEl) {
@@ -744,6 +899,11 @@
         } else {
             setToleranceValue(root, "");
         }
+        const toleranceValue = getToleranceValue(root);
+        if (state && Number.isFinite(toleranceValue)) {
+            state.lastAutomaticTolerance = toleranceValue;
+        }
+        setUnsavedChanges(state, false);
     }
 
     function loadFullImage(imageId, state) {
@@ -791,30 +951,38 @@
         setLoadingState(state, "snapshot", true);
         fetchJson(`/api/sorting/${imageId}`)
             .then((snapshot) => {
-                console.log("Sorting snapshot:", snapshot);
-                state.columns = Array.isArray(snapshot.columns) ? snapshot.columns : [];
-                state.glyphs = snapshot.glyphs || {};
-                resetMeasurementState(state);
-                if (!state.columns.length) {
-                    state.focusIndex = 0;
-                    state.activeColumnIndex = null;
-                    state.activeGlyphId = null;
-                } else if (state.focusIndex >= state.columns.length) {
-                    state.focusIndex = state.columns.length - 1;
-                } else if (state.focusIndex < 0) {
-                    state.focusIndex = 0;
-                }
-
-                state.viewWindow = null;
-                renderColumnChart(root, snapshot, state);
-                renderManualColumns(state);
-                onColumnFocusChange(state);
+                applySortingSnapshot(snapshot, state, { markUnsaved: false });
                 setLoadingState(state, "snapshot", false);
             })
             .catch((error) => {
                 console.error("Failed to load sorting snapshot", error);
                 setLoadingState(state, "snapshot", false);
             });
+    }
+
+    function applySortingSnapshot(snapshot, state, options = {}) {
+        if (!state?.root) {
+            return;
+        }
+        const markUnsaved = Boolean(options?.markUnsaved);
+        state.columns = Array.isArray(snapshot?.columns) ? snapshot.columns : [];
+        state.glyphs = snapshot?.glyphs || {};
+        resetMeasurementState(state);
+        if (!state.columns.length) {
+            state.focusIndex = 0;
+            state.activeColumnIndex = null;
+            state.activeGlyphId = null;
+        } else if (state.focusIndex >= state.columns.length) {
+            state.focusIndex = state.columns.length - 1;
+        } else if (state.focusIndex < 0) {
+            state.focusIndex = 0;
+        }
+
+        state.viewWindow = null;
+        renderColumnChart(state.root, snapshot, state);
+        renderManualColumns(state);
+        onColumnFocusChange(state);
+        setUnsavedChanges(state, markUnsaved ? true : false);
     }
 
     function updateToleranceLabel(root, value) {
@@ -845,6 +1013,18 @@
         if (numericInput) {
             numericInput.value = clamped;
         }
+    }
+
+    function getToleranceValue(root) {
+        const slider = root.querySelector("[data-sort-tolerance-input]");
+        if (!slider) {
+            return null;
+        }
+        const numeric = Number(slider.value);
+        if (Number.isNaN(numeric) || numeric <= 0) {
+            return null;
+        }
+        return numeric;
     }
 
     function renderColumnChart(root, snapshot, state) {
@@ -1479,6 +1659,7 @@
         renderManualColumns(state);
         renderColumnChart(state.root, { columns: state.columns }, state);
         onColumnFocusChange(state);
+        setUnsavedChanges(state, true);
     }
 
     function getGlyphSortKey(glyphs, glyphId) {
@@ -1665,6 +1846,35 @@
         } catch (err) {
             return "";
         }
+    }
+
+    function setupLeaveWarning(state) {
+        const root = state?.root;
+        if (!root) {
+            return;
+        }
+        const backLink = root.querySelector("[data-sort-back]");
+        if (!backLink) {
+            return;
+        }
+        backLink.addEventListener("click", (event) => {
+            if (!state.hasUnsavedChanges) {
+                return;
+            }
+            const confirmed = window.confirm(
+                "You have unsaved changes. Leave the sorting view and discard them?"
+            );
+            if (!confirmed) {
+                event.preventDefault();
+            }
+        });
+    }
+
+    function setUnsavedChanges(state, value) {
+        if (!state) {
+            return;
+        }
+        state.hasUnsavedChanges = Boolean(value);
     }
 
     function normalizeViewWindow(view, aspectRatio, imageWidth, imageHeight) {

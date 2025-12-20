@@ -16,6 +16,7 @@ class CollectionItem:
     image_src: str
     status_label: str
     status_variant: str
+    status_code: str
 
 
 STATUS_VARIANT_MAP = {
@@ -46,7 +47,8 @@ def fetch_collection_items(limit: Optional[int] = None) -> list[CollectionItem]:
             i.file_name,
             i.mimetype,
             i.img_preview,
-            s.status AS status_label
+            s.status AS status_label,
+            s.status_code
         FROM t_images AS i
         LEFT JOIN t_images_status AS s ON s.id = i.id_status
         ORDER BY i.id DESC
@@ -67,14 +69,20 @@ def fetch_collection_items(limit: Optional[int] = None) -> list[CollectionItem]:
             mimetype,
             img_blob,
             status_label,
+            status_code,
         ) = row
+        normalized_code = (status_code or "").strip().upper()
+        status_variant = _resolve_status_variant(status_label)
+        if normalized_code == "SORT_VALIDATE":
+            status_variant = "warning"
         collection.append(
             CollectionItem(
                 id=item_id,
                 title=(title or file_name or "").strip(),
                 image_src=_build_image_src(img_blob, mimetype),
                 status_label=status_label or "",
-                status_variant=_resolve_status_variant(status_label),
+                status_variant=status_variant,
+                status_code=normalized_code,
             )
         )
 

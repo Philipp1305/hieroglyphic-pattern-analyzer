@@ -72,7 +72,7 @@ def apply_sorting_snapshot(image_id: int):
         if tolerance_value <= 0:
             return {"error": "tolerance must be positive"}, 400
 
-    ordered_entries: list[tuple[int, int, int]] = []
+    normalized_columns: list[tuple[int, list[int]]] = []
     for entry in columns:
         if not isinstance(entry, dict):
             return {"error": "Invalid column entry"}, 400
@@ -82,18 +82,34 @@ def apply_sorting_snapshot(image_id: int):
             return {"error": "col must be a non-negative integer"}, 400
         if not isinstance(glyph_ids, list):
             return {"error": "glyph_ids must be a list"}, 400
-        for row_idx, glyph_id in enumerate(glyph_ids):
+        if col_idx == 0:
+            # Drop column 0 entirely
+            continue
+        glyph_list: list[int] = []
+        for glyph_id in glyph_ids:
             if not isinstance(glyph_id, int):
                 return {"error": "glyph_ids must contain integers"}, 400
-            ordered_entries.append((glyph_id, col_idx, row_idx))
+            glyph_list.append(int(glyph_id))
+        if glyph_list:
+            normalized_columns.append((int(col_idx), glyph_list))
 
     valid_glyph_ids = _glyph_ids_for_image(image_id)
     if not valid_glyph_ids:
         return {"error": "image has no glyphs"}, 400
 
-    invalid = [gid for gid, _, _ in ordered_entries if gid not in valid_glyph_ids]
+    all_glyph_ids = [gid for _, glyphs in normalized_columns for gid in glyphs]
+    invalid = [gid for gid in all_glyph_ids if gid not in valid_glyph_ids]
     if invalid:
         return {"error": f"glyph ids do not belong to image: {invalid}"}, 400
+
+    ordered_entries: list[tuple[int, int, int]] = []
+    if normalized_columns:
+        normalized_columns.sort(key=lambda item: item[0])
+        base_col = normalized_columns[0][0]
+        for offset, (col_val, glyphs) in enumerate(normalized_columns):
+            mapped_col = base_col + offset
+            for row_idx, glyph_id in enumerate(glyphs):
+                ordered_entries.append((glyph_id, mapped_col, row_idx))
 
     delete(
         """

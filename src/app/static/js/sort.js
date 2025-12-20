@@ -1654,8 +1654,9 @@
         );
         targetColumn.glyph_ids = targetGlyphs;
 
-        state.activeColumnIndex = targetIndex;
-        state.activeGlyphId = glyphId;
+        state.activeColumnIndex = null;
+        state.activeGlyphId = null;
+        state.preserveViewOnFocus = true;
         renderManualColumns(state);
         renderColumnChart(state.root, { columns: state.columns }, state);
         onColumnFocusChange(state);

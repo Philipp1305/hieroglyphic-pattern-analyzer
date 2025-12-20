@@ -5,7 +5,7 @@ from typing import Optional
 
 from flask import jsonify
 
-from src.database.select import run_select
+from src.database.tools import select
 
 from . import bp
 
@@ -54,7 +54,7 @@ def _fetch_image_metadata(image_id: int) -> Optional[dict]:
         WHERE i.id = %s
     """
 
-    rows = run_select(sql, (image_id,))
+    rows = select(sql, (image_id,))
     if not rows:
         return None
 
@@ -90,7 +90,7 @@ def _fetch_image_meta_summary(image_id: int) -> Optional[dict]:
         WHERE i.id = %s
     """
 
-    rows = run_select(sql, (image_id,))
+    rows = select(sql, (image_id,))
     if not rows:
         return None
 
@@ -116,7 +116,7 @@ def _fetch_image_meta_summary(image_id: int) -> Optional[dict]:
 
 
 def _fetch_full_image(image_id: int) -> Optional[dict]:
-    rows = run_select(
+    rows = select(
         """
         SELECT img, mimetype
         FROM t_images

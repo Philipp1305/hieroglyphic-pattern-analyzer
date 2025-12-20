@@ -3,10 +3,8 @@ from __future__ import annotations
 from typing import Dict, List
 
 from flask import jsonify, request
-from psycopg2.extras import execute_values
 
-from src.database.connect import connect
-from src.database.select import run_select
+from src.database.tools import delete, insert, select
 
 from . import bp
 
@@ -16,7 +14,7 @@ def get_sorting_columns(image_id: int):
     if not _image_exists(image_id):
         return {"error": "image not found"}, 404
 
-    rows = run_select(
+    rows = select(
         """
         SELECT gs.v_column, gs.v_row, gs.id_glyph
         FROM t_glyphes_sorted AS gs
@@ -82,48 +80,39 @@ def apply_sorting_snapshot(image_id: int):
     if invalid:
         return {"error": f"glyph ids do not belong to image: {invalid}"}, 400
 
-    conn = connect()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                DELETE FROM t_glyphes_sorted
-                WHERE id_glyph = ANY(%s)
-                """,
-                (list(valid_glyph_ids),),
-            )
+    delete(
+        """
+        DELETE FROM t_glyphes_sorted
+        WHERE id_glyph = ANY(%s)
+        """,
+        (list(valid_glyph_ids),),
+    )
 
-            if ordered_entries:
-                execute_values(
-                    cur,
-                    """
-                    INSERT INTO t_glyphes_sorted (id_glyph, v_column, v_row)
-                    VALUES %s
-                    """,
-                    ordered_entries,
-                )
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+    if ordered_entries:
+        insert(
+            """
+            INSERT INTO t_glyphes_sorted (id_glyph, v_column, v_row)
+            VALUES (%s, %s, %s)
+            """,
+            ordered_entries,
+            many=True,
+        )
 
     return jsonify({"status": "ok", "updated": len(ordered_entries)})
 
 
 def _image_exists(image_id: int) -> bool:
-    rows = run_select("SELECT 1 FROM t_images WHERE id = %s", (image_id,))
+    rows = select("SELECT 1 FROM t_images WHERE id = %s", (image_id,))
     return bool(rows)
 
 
 def _glyph_ids_for_image(image_id: int) -> set[int]:
-    rows = run_select("SELECT id FROM t_glyphes_raw WHERE id_image = %s", (image_id,))
+    rows = select("SELECT id FROM t_glyphes_raw WHERE id_image = %s", (image_id,))
     return {int(row[0]) for row in rows}
 
 
 def _glyph_metadata(image_id: int) -> dict[str, dict[str, float | str]]:
-    rows = run_select(
+    rows = select(
         """
         SELECT gr.id, gr.bbox_x, gr.bbox_y, gr.bbox_width, gr.bbox_height,
                gc.code, gc.unicode

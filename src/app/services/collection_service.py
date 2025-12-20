@@ -4,7 +4,7 @@ from base64 import b64encode
 from dataclasses import dataclass
 from typing import Optional
 
-from src.database.select import run_select
+from src.database.tools import select
 
 
 @dataclass(frozen=True)
@@ -56,7 +56,7 @@ def fetch_collection_items(limit: Optional[int] = None) -> list[CollectionItem]:
         sql += " LIMIT %s"
         params = (limit,)
 
-    results = run_select(sql, params)
+    results = select(sql, params)
     collection: list[CollectionItem] = []
 
     for row in results:

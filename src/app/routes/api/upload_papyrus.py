@@ -7,7 +7,7 @@ import psycopg2
 
 from flask import current_app, jsonify, request
 from psycopg2.extras import Json
-from src.database.insert import run_insert
+from src.database.tools import insert
 from . import bp
 
 
@@ -31,6 +31,11 @@ def upload_papyrus():
         papyrus_name = request.form.get("papyrus_name", "papyrus")
         reading_direction_raw = request.form.get("reading_direction", "ltr")
         reading_direction = 1 if reading_direction_raw == "rtl" else 0
+        sort_tolerance_raw = request.form.get("sort_tolerance")
+        try:
+            sort_tolerance = int(sort_tolerance_raw) if sort_tolerance_raw else 100
+        except ValueError:
+            sort_tolerance = 100
         id_status = 1
 
         image_file = request.files.get("papyrus_image_file")
@@ -54,9 +59,10 @@ def upload_papyrus():
                 file_name,
                 mimetype,
                 reading_direction,
-                id_status
+                id_status,
+                sort_tolerance
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         """
 
@@ -69,8 +75,9 @@ def upload_papyrus():
             mimetype,
             reading_direction,
             id_status,
+            sort_tolerance,
         )
-        new_id = run_insert(sql, params)
+        new_id = insert(sql, params)
         return jsonify({"status": "success", "id": new_id})
 
     except Exception as exc:

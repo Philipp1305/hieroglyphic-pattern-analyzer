@@ -15,5 +15,5 @@ from . import database  # noqa: E402,F401
 from . import upload_page  # noqa: E402,F401
 from . import view_page  # noqa: E402,F401
 from . import overview  # noqa: E402,F401
-from . import sort_page    # noqa: E402,F401
+from . import sort_page  # noqa: E402,F401
 from . import collection  # noqa: E402,F401

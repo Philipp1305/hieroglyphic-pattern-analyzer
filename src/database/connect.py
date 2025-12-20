@@ -59,7 +59,7 @@ def test_connection() -> bool:
 
 if __name__ == "__main__":
     test = test_connection()
-    if test == True:
+    if test:
         print("Database connection successful.")
     else:
         print("Database connection failed.")

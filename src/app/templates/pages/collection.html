@@ -1,51 +1,78 @@
 <div class="relative flex min-h-screen w-full flex-col">
-    {% include 'components/navbar.html' %}
-    <main class="flex-1">
-        <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-            <div class="flex flex-col gap-8">
-                <div class="rounded-xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-6 shadow-sm">
-                    <div class="flex flex-col gap-3">
-                        <p class="text-4xl font-black leading-tight tracking-[-0.033em]">Collection Overview</p>
-                        <p class="text-base font-normal leading-normal text-text-secondary-light dark:text-text-secondary-dark">
-                            Browse the latest processed and pending entries that have been ingested into GlyPat. Select an
-                            item to view its processing history and annotation data.
-                        </p>
-                    </div>
-                </div>
-                <div class="rounded-xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-6 shadow-sm">
-                    <div class="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-                        
-                        <div class="flex w-full flex-col gap-4 md:flex-row md:items-end">
-                            <label class="flex flex-1 flex-col gap-2 text-sm font-medium text-text-light dark:text-text-dark">
-                                <span>Search by name</span>
-                                <input type="text"
-                                    class="w-full rounded-full border border-border-light bg-white/70 px-4 py-2 text-base font-normal text-text-light placeholder:text-text-secondary-light focus:border-primary focus:outline-none dark:border-border-dark dark:bg-card-dark/70 dark:text-text-dark"
-                                    placeholder="e.g. Book of the Dead" data-collection-search />
-                            </label>
-                            <label class="flex w-full flex-col gap-2 text-sm font-medium text-text-light dark:text-text-dark md:w-48">
-                                <span>Sort by ID</span>
-                                <select
-                                    class="w-full rounded-full border border-border-light bg-white/70 px-4 py-2 text-base font-normal text-text-light focus:border-primary focus:outline-none dark:border-border-dark dark:bg-card-dark/70 dark:text-text-dark"
-                                    data-collection-sort>
-                                    <option value="desc">Newest first</option>
-                                    <option value="asc">Oldest first</option>
-                                </select>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div data-collection-grid class="min-h-64">
-                    <div class="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark/70 py-16">
-                        <span class="relative flex h-8 w-8">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                            <span class="relative inline-flex h-8 w-8 rounded-full bg-primary/70"></span>
-                        </span>
-                        <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark" data-collection-empty>
-                            Loading collection…
-                        </p>
-                    </div>
-                </div>
-            </div>
+  {% include 'components/navbar.html' %}
+  <main class="flex-1">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div class="flex flex-col gap-8">
+        <div
+          class="rounded-xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-6 shadow-sm"
+        >
+          <div class="flex flex-col gap-3">
+            <p class="text-4xl font-black leading-tight tracking-[-0.033em]">
+              Collection Overview
+            </p>
+            <p
+              class="text-base font-normal leading-normal text-text-secondary-light dark:text-text-secondary-dark"
+            >
+              Browse the latest processed and pending entries that have been
+              ingested into GlyPat. Select an item to view its processing
+              history and annotation data.
+            </p>
+          </div>
         </div>
-    </main>
+        <div
+          class="rounded-xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-6 shadow-sm"
+        >
+          <div
+            class="flex flex-col gap-6 md:flex-row md:items-end md:justify-between"
+          >
+            <div class="flex w-full flex-col gap-4 md:flex-row md:items-end">
+              <label
+                class="flex flex-1 flex-col gap-2 text-sm font-medium text-text-light dark:text-text-dark"
+              >
+                <span>Search by name</span>
+                <input
+                  type="text"
+                  class="w-full rounded-full border border-border-light bg-white/70 px-4 py-2 text-base font-normal text-text-light placeholder:text-text-secondary-light focus:border-primary focus:outline-none dark:border-border-dark dark:bg-card-dark/70 dark:text-text-dark"
+                  placeholder="e.g. Book of the Dead"
+                  data-collection-search
+                />
+              </label>
+              <label
+                class="flex w-full flex-col gap-2 text-sm font-medium text-text-light dark:text-text-dark md:w-48"
+              >
+                <span>Sort by ID</span>
+                <select
+                  class="w-full rounded-full border border-border-light bg-white/70 px-4 py-2 text-base font-normal text-text-light focus:border-primary focus:outline-none dark:border-border-dark dark:bg-card-dark/70 dark:text-text-dark"
+                  data-collection-sort
+                >
+                  <option value="desc">Newest first</option>
+                  <option value="asc">Oldest first</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div data-collection-grid class="min-h-64">
+          <div
+            class="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark/70 py-16"
+          >
+            <span class="relative flex h-8 w-8">
+              <span
+                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
+              ></span>
+              <span
+                class="relative inline-flex h-8 w-8 rounded-full bg-primary/70"
+              ></span>
+            </span>
+            <p
+              class="text-sm text-text-secondary-light dark:text-text-secondary-dark"
+              data-collection-empty
+            >
+              Loading collection…
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
 </div>

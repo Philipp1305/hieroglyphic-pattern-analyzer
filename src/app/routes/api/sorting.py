@@ -178,7 +178,9 @@ def preview_sorting(image_id: int):
         return {"error": "image has no glyphs"}, 400
 
     reading_direction = _reading_direction(image_id)
-    ordered_entries, _ = run_sort_algorithm(glyph_rows, tolerance_value, reading_direction)
+    ordered_entries, _ = run_sort_algorithm(
+        glyph_rows, tolerance_value, reading_direction
+    )
     columns_payload = _build_columns_payload(ordered_entries)
 
     return jsonify(
@@ -274,7 +276,9 @@ def _status_id_by_code(status_code: str) -> int | None:
 
 def _build_columns_payload(entries: List[Tuple[int, int, int]]) -> list[ColumnEntry]:
     columns: Dict[int, List[int]] = {}
-    for glyph_id, col_idx, row_idx in sorted(entries, key=lambda item: (item[1], item[2])):
+    for glyph_id, col_idx, row_idx in sorted(
+        entries, key=lambda item: (item[1], item[2])
+    ):
         glyph_id_int = int(glyph_id)
         col_idx_int = int(col_idx)
         columns.setdefault(col_idx_int, []).append(glyph_id_int)

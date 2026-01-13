@@ -1,27 +1,40 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>GlyPat | Hieroglyphic Pattern Detection</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap"
-        rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Caesar+Dressing&display=swap"
-        rel="stylesheet" />
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/icon.png') }}" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caesar+Dressing&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='images/icon.png') }}"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+      rel="stylesheet"
+    />
+    <link
+      href="{{ url_for('static', filename='style.css') }}"
+      rel="stylesheet"
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    {% if static_js_files %}
-        {% for script_path in static_js_files %}
-            <script src="{{ url_for('static', filename=script_path) }}"></script>
-        {% endfor %}
-    {% endif %}
-</head>
+    {% if static_js_files %} {% for script_path in static_js_files %}
+    <script src="{{ url_for('static', filename=script_path) }}"></script>
+    {% endfor %} {% endif %}
+  </head>
 
-<body class="font-display bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark">
+  <body
+    class="font-display bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark"
+  >
     {% include content_template | default('pages/home.html', true) %}
-</body>
+  </body>
 </html>

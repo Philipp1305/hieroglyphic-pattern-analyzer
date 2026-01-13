@@ -42,4 +42,4 @@ def create_app():
     return app
 
 
-from .routes.websockets import ws_sort  # noqa: E402,F401
+from .routes.websockets import ws_ngram, ws_sort  # noqa: E402,F401

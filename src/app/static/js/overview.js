@@ -16,7 +16,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const imageEl = overviewRoot.querySelector("[data-overview-image-content]");
   const loadingEl = overviewRoot.querySelector("[data-overview-loading]");
   const breadcrumbEl = overviewRoot.querySelector("[data-overview-breadcrumb]");
-  const pipelineContainer = overviewRoot.querySelector("[data-pipeline-container]");
+  const pipelineContainer = overviewRoot.querySelector(
+    "[data-pipeline-container]",
+  );
 
   const applyTitle = (value) => {
     if (titleEl && value) {
@@ -46,7 +48,11 @@ document.addEventListener("DOMContentLoaded", () => {
   let stageOrder = [
     { key: "upload", title: "Image uploaded" },
     { key: "json", title: "JSON processed" },
-    { key: "sort", title: "Sorting algorithm", pendingSubtitle: "Waiting for confirmation in Sorting View" },
+    {
+      key: "sort",
+      title: "Sorting algorithm",
+      pendingSubtitle: "Waiting for confirmation in Sorting View",
+    },
     { key: "ngrams", title: "N-Grams" },
     { key: "suffix", title: "Suffix tree" },
   ];
@@ -54,13 +60,55 @@ document.addEventListener("DOMContentLoaded", () => {
   let pendingStatusCode = null;
 
   const statusMapping = {
-    UPLOAD: { upload: "done", json: "running", sort: "waiting", ngrams: "waiting", suffix: "waiting" },
-    JSON: { upload: "done", json: "done", sort: "running", ngrams: "waiting", suffix: "waiting" },
-    SORT_VALIDATE: { upload: "done", json: "done", sort: "pending", ngrams: "waiting", suffix: "waiting" },
-    SORT: { upload: "done", json: "done", sort: "done", ngrams: "running", suffix: "waiting" },
-    NGRAMS: { upload: "done", json: "done", sort: "done", ngrams: "done", suffix: "running" },
-    SUFFIX: { upload: "done", json: "done", sort: "done", ngrams: "done", suffix: "done" },
-    DONE: { upload: "done", json: "done", sort: "done", ngrams: "done", suffix: "done" },
+    UPLOAD: {
+      upload: "done",
+      json: "running",
+      sort: "waiting",
+      ngrams: "waiting",
+      suffix: "waiting",
+    },
+    JSON: {
+      upload: "done",
+      json: "done",
+      sort: "running",
+      ngrams: "waiting",
+      suffix: "waiting",
+    },
+    SORT_VALIDATE: {
+      upload: "done",
+      json: "done",
+      sort: "pending",
+      ngrams: "waiting",
+      suffix: "waiting",
+    },
+    SORT: {
+      upload: "done",
+      json: "done",
+      sort: "done",
+      ngrams: "running",
+      suffix: "waiting",
+    },
+    NGRAMS: {
+      upload: "done",
+      json: "done",
+      sort: "done",
+      ngrams: "done",
+      suffix: "running",
+    },
+    SUFFIX: {
+      upload: "done",
+      json: "done",
+      sort: "done",
+      ngrams: "done",
+      suffix: "done",
+    },
+    DONE: {
+      upload: "done",
+      json: "done",
+      sort: "done",
+      ngrams: "done",
+      suffix: "done",
+    },
   };
 
   const renderPipelineLoading = () => {
@@ -74,11 +122,12 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
   };
 
-  const renderPipeline = (statusCode) => {
+  const renderPipeline = (statusCode, options = {}) => {
     if (!pipelineContainer) {
       return;
     }
-    if (!statusesLoaded) {
+    const forceRender = Boolean(options.force);
+    if (!statusesLoaded && !forceRender) {
       pendingStatusCode = statusCode;
       renderPipelineLoading();
       return;
@@ -189,7 +238,12 @@ document.addEventListener("DOMContentLoaded", () => {
     "hover:bg-primary/90",
     "hover:text-white",
   ];
-  const lockedStateClasses = ["pointer-events-none", "opacity-60", "cursor-not-allowed", "border-dashed"];
+  const lockedStateClasses = [
+    "pointer-events-none",
+    "opacity-60",
+    "cursor-not-allowed",
+    "border-dashed",
+  ];
 
   const actionRules = [
     {
@@ -209,7 +263,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const updateActionCards = (statusCode = "") => {
     const normalizedStatus = (statusCode || "").toString().trim().toUpperCase();
     actionRules.forEach((rule) => {
-      const card = overviewRoot.querySelector(`[data-action-card="${rule.key}"]`);
+      const card = overviewRoot.querySelector(
+        `[data-action-card="${rule.key}"]`,
+      );
       if (!card) {
         return;
       }
@@ -246,17 +302,61 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (rule.key === "sort") {
           if (normalizedStatus === "SORT_VALIDATE") {
-            showBadge("Action required", ["bg-primary/10", "text-primary"], ["bg-border-light", "text-text-secondary-light", "dark:bg-border-dark"]);
+            showBadge(
+              "Action required",
+              ["bg-primary/10", "text-primary"],
+              [
+                "bg-border-light",
+                "text-text-secondary-light",
+                "dark:bg-border-dark",
+              ],
+            );
           } else if (isLocked) {
-            showBadge("Locked", ["bg-border-light", "text-text-secondary-light", "dark:bg-border-dark"], ["bg-primary/10", "text-primary"]);
+            showBadge(
+              "Locked",
+              [
+                "bg-border-light",
+                "text-text-secondary-light",
+                "dark:bg-border-dark",
+              ],
+              ["bg-primary/10", "text-primary"],
+            );
           } else {
-            showBadge("", [], ["bg-primary/10", "text-primary", "bg-border-light", "text-text-secondary-light", "dark:bg-border-dark"]);
+            showBadge(
+              "",
+              [],
+              [
+                "bg-primary/10",
+                "text-primary",
+                "bg-border-light",
+                "text-text-secondary-light",
+                "dark:bg-border-dark",
+              ],
+            );
           }
         } else {
           if (isLocked) {
-            showBadge("Locked", ["bg-border-light", "text-text-secondary-light", "dark:bg-border-dark"], ["bg-primary/10", "text-primary"]);
+            showBadge(
+              "Locked",
+              [
+                "bg-border-light",
+                "text-text-secondary-light",
+                "dark:bg-border-dark",
+              ],
+              ["bg-primary/10", "text-primary"],
+            );
           } else {
-            showBadge("", [], ["bg-primary/10", "text-primary", "bg-border-light", "text-text-secondary-light", "dark:bg-border-dark"]);
+            showBadge(
+              "",
+              [],
+              [
+                "bg-primary/10",
+                "text-primary",
+                "bg-border-light",
+                "text-text-secondary-light",
+                "dark:bg-border-dark",
+              ],
+            );
           }
         }
       }
@@ -271,6 +371,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const autoActionMap = {
     UPLOAD: { event: "c2s:process_image", needsTolerance: false },
     JSON: { event: "c2s:start_sorting", needsTolerance: true },
+    SORT: { event: "c2s:start_ngrams", needsTolerance: false },
   };
   let metaPayload = null;
   let statusLabels = {};
@@ -291,7 +392,10 @@ document.addEventListener("DOMContentLoaded", () => {
       { key: "json", title: getStatusLabel("JSON", "JSON processed") },
       {
         key: "sort",
-        title: getStatusLabel("SORT_VALIDATE", getStatusLabel("SORT", "Sorting algorithm")),
+        title: getStatusLabel(
+          "SORT_VALIDATE",
+          getStatusLabel("SORT", "Sorting algorithm"),
+        ),
         pendingSubtitle: "Waiting for confirmation in Sorting View",
       },
       { key: "ngrams", title: getStatusLabel("NGRAMS", "N-Grams") },
@@ -309,7 +413,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     const statusCode = getNormalizedStatus(
-      statusOverride ?? metaPayload.status_code
+      statusOverride ?? metaPayload.status_code,
     );
     console.log("[overview] auto pipeline status", statusCode);
     const action = autoActionMap[statusCode];
@@ -321,7 +425,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (action.needsTolerance) {
       const tolerance = Number(metaPayload.tolerance);
       if (!Number.isFinite(tolerance) || tolerance <= 0) {
-        console.log("[overview] auto pipeline invalid tolerance", metaPayload.tolerance);
+        console.log(
+          "[overview] auto pipeline invalid tolerance",
+          metaPayload.tolerance,
+        );
         return;
       }
       payload.tolerance = tolerance;
@@ -350,6 +457,16 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data.status === "success") {
         renderPipeline(data.status_code || "JSON");
         maybeStartAutoPipeline("JSON");
+      }
+    });
+
+    socket.on("s2c:start_ngrams:response", (data) => {
+      console.log("[overview] s2c:start_ngrams:response", data);
+      if (!data || String(data.image_id) !== String(imageId)) {
+        return;
+      }
+      if (data.status === "success") {
+        renderPipeline(data.status_code || "NGRAMS");
       }
     });
   }
@@ -421,8 +538,7 @@ document.addEventListener("DOMContentLoaded", () => {
       statusesLoaded = true;
       applyStatusLabels();
       const nextStatus =
-        pendingStatusCode ??
-        (metaPayload ? metaPayload.status_code : null);
+        pendingStatusCode ?? (metaPayload ? metaPayload.status_code : null);
       renderPipeline(nextStatus);
     })
     .catch((error) => {

@@ -27,7 +27,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return "bg-primary/10 text-primary border border-primary/20";
   };
 
-  const renderCards = (items, emptyMessage = "No collection entries found yet.") => {
+  const renderCards = (
+    items,
+    emptyMessage = "No collection entries found yet.",
+  ) => {
     if (!items.length) {
       renderEmpty(emptyMessage);
       return;
@@ -36,14 +39,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const cards = document.createElement("div");
     cards.className = "grid grid-cols-1 md:grid-cols-2 gap-6";
     cards.innerHTML = items
-      .map(
-        (item) => {
-          const statusCode = (item.status_code || "").toString().trim().toUpperCase();
-          const isActionRequired = statusCode === "SORT_VALIDATE";
-          const variant = item.status_variant || "info";
-          const mainBadgeClass = statusClass(variant);
-          const statusLabel = item.status_label || "Unknown";
-          return `
+      .map((item) => {
+        const statusCode = (item.status_code || "")
+          .toString()
+          .trim()
+          .toUpperCase();
+        const isActionRequired = statusCode === "SORT_VALIDATE";
+        const variant = item.status_variant || "info";
+        const mainBadgeClass = statusClass(variant);
+        const statusLabel = item.status_label || "Unknown";
+        return `
         <a class="group flex flex-col overflow-hidden rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark shadow-lg transition-all hover:shadow-xl hover:-translate-y-1"
             href="/overview?id=${encodeURIComponent(item.id)}">
             <div class="aspect-[4/3] overflow-hidden">
@@ -75,8 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
         </a>
     `;
-        }
-      )
+      })
       .join("");
 
     gridRoot.innerHTML = "";
@@ -85,7 +89,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const filterAndSortItems = () => {
     const query = (searchInput?.value || "").trim().toLowerCase();
-    const sortDirection = (sortSelect?.value || "desc").toLowerCase() === "asc" ? "asc" : "desc";
+    const sortDirection =
+      (sortSelect?.value || "desc").toLowerCase() === "asc" ? "asc" : "desc";
 
     const filtered = collectionItems.filter((item) => {
       if (!query) {
@@ -101,7 +106,9 @@ document.addEventListener("DOMContentLoaded", () => {
       return b.id - a.id;
     });
 
-    const emptyMessage = query ? "No collection entries match your search." : "No collection entries found yet.";
+    const emptyMessage = query
+      ? "No collection entries match your search."
+      : "No collection entries found yet.";
     renderCards(sorted, emptyMessage);
   };
 

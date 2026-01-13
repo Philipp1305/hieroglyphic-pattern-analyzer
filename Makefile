@@ -1,12 +1,18 @@
 PYTHON ?= python
+PRETTIER ?= npx prettier
 
 .PHONY: run
 run:
 	$(PYTHON) -m src.app
 
-.PHONY: format lint lint-fix
-format:
+.PHONY: format format-python format-frontend lint lint-fix
+format: format-python format-frontend
+
+format-python:
 	ruff format .
+
+format-frontend:
+	$(PRETTIER) --write "src/app/templates/**/*.html" "src/app/static/js/**/*.js"
 lint:
 	ruff check .
 lint-fix:

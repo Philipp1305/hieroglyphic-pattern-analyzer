@@ -34,7 +34,9 @@ def start_sorting(payload=None, tolerance=100):
     try:
         tolerance_value = float(tolerance)
     except (TypeError, ValueError):
-        print(f"[ws_sort] start_sorting invalid tolerance={tolerance}, defaulting to 100")
+        print(
+            f"[ws_sort] start_sorting invalid tolerance={tolerance}, defaulting to 100"
+        )
         tolerance_value = 100
 
     try:

@@ -162,8 +162,8 @@ execute function SET_T_GLYPHES_RAW_ID();
 -- TABLE
 create table T_GLYPHES_SORTED(
     id_glyph    integer not null,
-    v_column    integer not null, -- Changed from 'column'
-    v_row       integer not null,    -- Changed from 'row'
+    v_column    integer not null,
+    v_row       integer not null,
     constraint  T_GLYPHES_SORTED_PK primary key (id_glyph, v_column, v_row),
     constraint  T_GLYPHES_SORTED_FK foreign key (id_glyph) references T_GLYPHES_RAW(id) on delete cascade
 );
@@ -239,3 +239,93 @@ values ('Suffix-Tree computed', 'SUFFIX');
 
 insert into T_IMAGES_STATUS(status, status_code)
 values ('Done', 'DONE');
+
+------------------------------------------------------------------
+-- T_NGRAM_PATTERN
+------------------------------------------------------------------
+-- TABLE
+create table T_NGRAM_PATTERN (
+  id            integer not null,
+  id_image		integer not null,
+  gardiner_ids  integer[] not null,
+  length        integer not null,
+  count			integer not null,
+  constraint	T_NGRAM_PATTERN_PK primary key (id),
+  constraint    T_NGRAM_PATTERN_FK foreign key (id_image) references T_IMAGES(id) on delete cascade
+);
+
+-- SEQUENCE
+create sequence T_NGRAM_PATTERN_SEQ
+start with 1
+increment by 1;
+
+-- TRIGGER FUNCTION
+create or replace function SET_T_NGRAM_PATTERN_ID()
+returns trigger as $$
+begin
+    new.id := nextval('T_NGRAM_PATTERN_SEQ');
+    return new;
+end;
+$$ language plpgsql;
+
+-- TRIGGER
+create or replace trigger T_NGRAM_PATTERN_TR
+before insert on T_NGRAM_PATTERN
+for each row
+execute function SET_T_NGRAM_PATTERN_ID();
+
+-- COMMENTS
+comment on table t_ngram_pattern
+is 'stores the found patterns';
+comment on column t_ngram_pattern.id
+is 'Primary Key';
+comment on column t_ngram_pattern.id_image
+is 'Foreign Key to T_IMAGES';
+comment on column t_ngram_pattern.gardiner_ids
+is 'IDs of Gardiner Codes';
+comment on column t_ngram_pattern.length
+is 'length of ngram';
+comment on column t_ngram_pattern.count
+is 'number of occurences';
+
+------------------------------------------------------------------
+-- T_NGRAM_OCCURENCES
+------------------------------------------------------------------
+-- TABLE
+create table T_NGRAM_OCCURENCES (
+	id			integer not null,
+	id_pattern	integer not null,
+	glyph_ids	integer[] not null,
+	constraint	T_NGRAM_OCCURENCES_PK primary key (id),
+	constraint  T_NGRAM_OCCURENCES_FK foreign key (id_pattern) references T_NGRAM_PATTERN(id) on delete cascade
+);
+
+-- SEQUENCE
+create sequence T_NGRAM_OCCURENCES_SEQ
+start with 1
+increment by 1;
+
+-- TRIGGER FUNCTION
+create or replace function SET_T_NGRAM_OCCURENCES_ID()
+returns trigger as $$
+begin
+    new.id := nextval('T_NGRAM_OCCURENCES_SEQ');
+    return new;
+end;
+$$ language plpgsql;
+
+-- TRIGGER
+create or replace trigger T_NGRAM_OCCURENCES_TR
+before insert on T_NGRAM_OCCURENCES
+for each row
+execute function SET_T_NGRAM_OCCURENCES_ID();
+
+-- COMMENTS
+comment on table t_ngram_occurences
+is 'stores the occurences of ngram patterns with the glyph ids';
+comment on column t_ngram_occurences.id
+is 'Primary Key';
+comment on column t_ngram_occurences.id_pattern
+is 'Foreign Key to T_NGRAM_PATTERN';
+comment on column t_ngram_occurences.glyph_ids
+is 'IDs of Glyphes';

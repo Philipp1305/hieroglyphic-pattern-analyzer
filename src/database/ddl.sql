@@ -329,3 +329,54 @@ comment on column t_ngram_occurences.id_pattern
 is 'Foreign Key to T_NGRAM_PATTERN';
 comment on column t_ngram_occurences.glyph_ids
 is 'IDs of Glyphes';
+
+------------------------------------------------------------------
+-- T_NGRAM_OCCURENCES
+------------------------------------------------------------------
+-- TABLE
+create table T_NGRAM_OCCURENCES_BBOXES (
+	id			integer not null,
+	id_occ		integer not null,
+	bbox_x 		double precision not null,
+	bbox_y 		double precision not null,
+	bbox_height double precision not null,
+	bbox_width 	double precision not null,
+	constraint	T_NGRAM_OCCURENCES_BBOXES_PK primary key (id),
+	constraint  T_NGRAM_OCCURENCES_BBOXES_FK foreign key (id_occ) references T_NGRAM_OCCURENCES(id) on delete cascade
+);
+
+-- SEQUENCE
+create sequence T_NGRAM_OCCURENCES_BBOXES_SEQ
+start with 1
+increment by 1;
+
+-- TRIGGER FUNCTION
+create or replace function SET_T_NGRAM_OCCURENCES_BBOXES_ID()
+returns trigger as $$
+begin
+    new.id := nextval('T_NGRAM_OCCURENCES_BBOXES_SEQ');
+    return new;
+end;
+$$ language plpgsql;
+
+-- TRIGGER
+create or replace trigger T_NGRAM_OCCURENCES_BBOXES_TR
+before insert on T_NGRAM_OCCURENCES_BBOXES
+for each row
+execute function SET_T_NGRAM_OCCURENCES_BBOXES_ID();
+
+-- COMMENTS
+comment on table T_NGRAM_OCCURENCES_BBOXES
+is 'stores the bboxes for occurences (could be multiple because of line break)';
+comment on column T_NGRAM_OCCURENCES_BBOXES.id
+is 'Primary Key';
+comment on column T_NGRAM_OCCURENCES_BBOXES.id_occ
+is 'Foreign Key to T_NGRAM_OCCURENCES';
+comment on column T_NGRAM_OCCURENCES_BBOXES.bbox_x
+is 'bounding box x coordinate';
+comment on column T_NGRAM_OCCURENCES_BBOXES.bbox_y
+is 'bounding box y coordinate';
+comment on column T_NGRAM_OCCURENCES_BBOXES.bbox_height
+is 'bounding box height';
+comment on column T_NGRAM_OCCURENCES_BBOXES.bbox_width
+is 'bounding box width';

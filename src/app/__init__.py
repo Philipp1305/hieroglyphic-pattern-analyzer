@@ -18,7 +18,12 @@ def create_app():
     app.register_blueprint(api_bp)
     app.register_blueprint(site_bp)
 
-    socketio.init_app(app, cors_allowed_origins="*")
+    socketio.init_app(
+        app, 
+        cors_allowed_origins="*",
+        ping_interval=60,  # send pings every 30s
+        ping_timeout=1800,  # allow up to 15 minutes for a pong before disconnect
+    )
 
     def list_static_js_files():
         static_dir = app.static_folder

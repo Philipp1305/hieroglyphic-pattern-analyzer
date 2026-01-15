@@ -134,6 +134,73 @@ def persist_patterns(
     return None
 
 
+def store_occurrence_bboxes(image_id: int) -> None:
+    """
+    Compute and persist bounding boxes for each n-gram occurrence, grouped by column.
+    Multiple boxes can be stored for a single occurrence when it spans several columns.
+    """
+    occ_rows = select(
+        """
+        SELECT occ.id, occ.glyph_ids
+        FROM T_NGRAM_OCCURENCES AS occ
+        JOIN T_NGRAM_PATTERN AS pat ON pat.id = occ.id_pattern
+        WHERE pat.id_image = %s
+        """,
+        (image_id,),
+    )
+    if not occ_rows:
+        return
+
+    glyph_rows = select(
+        """
+        SELECT gr.id, gr.bbox_x, gr.bbox_y, gr.bbox_width, gr.bbox_height, gs.v_column
+        FROM T_GLYPHES_RAW AS gr
+        JOIN T_GLYPHES_SORTED AS gs ON gs.id_glyph = gr.id
+        WHERE gr.id_image = %s
+        """,
+        (image_id,),
+    )
+    if not glyph_rows:
+        return
+
+    glyph_map: dict[int, tuple[float, float, float, float, int]] = {
+        int(gid): (float(x), float(y), float(width), float(height), int(col))
+        for gid, x, y, width, height, col in glyph_rows
+    }
+
+    bbox_rows: list[tuple[int, float, float, float, float]] = []
+
+    for occ_id, glyph_ids in occ_rows:
+        if not glyph_ids:
+            continue
+
+        glyphs_by_column: dict[int, list[tuple[float, float, float, float]]] = {}
+        for glyph_id in glyph_ids:
+            glyph_data = glyph_map.get(int(glyph_id))
+            if glyph_data is None:
+                continue
+            x, y, width, height, col = glyph_data
+            glyphs_by_column.setdefault(col, []).append((x, y, width, height))
+
+        for col in sorted(glyphs_by_column):
+            col_glyphs = glyphs_by_column[col]
+            min_x = min(g[0] for g in col_glyphs)
+            min_y = min(g[1] for g in col_glyphs)
+            max_x = max(g[0] + g[2] for g in col_glyphs)
+            max_y = max(g[1] + g[3] for g in col_glyphs)
+            bbox_rows.append((occ_id, min_x, min_y, max_y - min_y, max_x - min_x))
+
+    if bbox_rows:
+        insert(
+            """
+            INSERT INTO T_NGRAM_OCCURENCES_BBOXES (id_occ, bbox_x, bbox_y, bbox_height, bbox_width)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            bbox_rows,
+            many=True,
+        )
+
+
 def ngram_counts_from_occurrences(
     occurrences: dict[tuple[int, ...], list[int]],
 ) -> Counter[tuple[int, ...]]:
@@ -164,6 +231,7 @@ def run_ngram(
 
     if occurrences:
         persist_patterns(image_id, occurrences, glyph_ids)
+        store_occurrence_bboxes(image_id)
 
     return ngram_counts_from_occurrences(occurrences)
 

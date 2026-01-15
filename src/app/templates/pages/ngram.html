@@ -133,8 +133,31 @@
       </aside>
       <!-- Right Panel: Papyrus Viewer -->
       <section
-        class="flex-1 bg-background-light dark:bg-background-dark p-4 flex flex-col gap-3 min-h-[420px] lg:min-h-0 min-w-0"
+        class="relative flex-1 bg-background-light dark:bg-background-dark p-4 flex flex-col gap-3 min-h-[420px] lg:min-h-0 min-w-0"
       >
+        <div
+          class="absolute inset-0 z-30 hidden flex items-center justify-center bg-background-light/85 dark:bg-background-dark/80 backdrop-blur-sm"
+          data-ngram-loading
+        >
+          <div
+            class="flex flex-col items-center gap-3 text-text-secondary-light dark:text-text-secondary-dark"
+          >
+            <div class="relative flex h-12 w-12" data-ngram-loading-spinner>
+              <span
+                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
+              ></span>
+              <span
+                class="relative inline-flex h-12 w-12 rounded-full bg-primary/70"
+              ></span>
+            </div>
+            <p
+              class="text-sm font-semibold tracking-wide uppercase"
+              data-ngram-loading-text
+            >
+              Loading workspace…
+            </p>
+          </div>
+        </div>
         <div
           class="rounded-xl border border-border-light dark:border-border-dark bg-card-light/90 dark:bg-card-dark/85 px-4 py-3 space-y-3 max-h-56 overflow-y-auto shadow-sm"
           data-ngram-selection-panel
@@ -172,52 +195,12 @@
           class="flex-1 rounded-2xl border border-border-light dark:border-border-dark bg-card-light/80 dark:bg-card-dark/80 shadow-inner relative overflow-hidden min-h-[420px] sm:min-h-[500px]"
           data-ngram-image-wrapper
         >
-          <div
-            class="absolute inset-0 z-20 flex items-center justify-center bg-background-light/85 dark:bg-background-dark/80 backdrop-blur-sm"
-            data-ngram-loading
-          >
-            <div
-              class="flex flex-col items-center gap-3 text-text-secondary-light dark:text-text-secondary-dark"
-            >
-              <div class="relative flex h-12 w-12" data-ngram-loading-spinner>
-                <span
-                  class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
-                ></span>
-                <span
-                  class="relative inline-flex h-12 w-12 rounded-full bg-primary/70"
-                ></span>
-              </div>
-              <p
-                class="text-sm font-semibold tracking-wide uppercase"
-                data-ngram-loading-text
-              >
-                Loading manuscript…
-              </p>
-            </div>
-          </div>
-          <div
-            class="absolute inset-0 w-full h-full bg-center bg-contain bg-no-repeat highlight-area opacity-0 transition-opacity duration-300"
-            data-highlight-area
-            data-ngram-image
-            data-alt="High-resolution image of a papyrus manuscript"
-            style="
-              --highlight-color-bg: rgba(34, 197, 94, 0.45);
-              --highlight-color-border: #22c55e;
-            "
-          >
-            <!-- Highlight Overlays would be dynamically rendered here. Example below. -->
-            <div
-              class="absolute top-[60%] left-[40%] w-[20px] h-[50px] rounded-md animate-pulse"
-              data-highlight-marker
-            ></div>
-            <div
-              class="absolute top-[48%] left-[71.5%] w-[20px] h-[50px] rounded-md animate-pulse"
-              data-highlight-marker
-            ></div>
-            <div
-              class="absolute top-[70%] left-[33%] w-[20px] h-[50px] rounded-md animate-pulse"
-              data-highlight-marker
-            ></div>
+          <div class="absolute inset-0 w-full h-full" data-ngram-image>
+            <canvas
+              class="absolute inset-0 w-full h-full"
+              data-ngram-canvas
+              aria-label="N-gram bounding boxes overlay"
+            ></canvas>
           </div>
         </div>
       </section>

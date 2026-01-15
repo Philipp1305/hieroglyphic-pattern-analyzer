@@ -24,6 +24,9 @@ def get_image_ngrams(image_id: int):
         (image_id,),
     )
 
+    pattern_ids = [int(row[0]) for row in patterns]
+    occurrences_by_pattern = _occurrences_with_bboxes(pattern_ids)
+
     items: list[dict[str, object]] = []
     lengths: set[int] = set()
 
@@ -54,6 +57,7 @@ def get_image_ngrams(image_id: int):
                     "unicode_values": unicode_values,
                     "unicode_label": unicode_label,
                     "symbol": symbol,
+                    "occurrences": occurrences_by_pattern.get(int(pattern_id), []),
                 }
             )
             lengths.add(int(length))
@@ -105,3 +109,55 @@ def _unicode_to_symbol(unicode_values: Sequence[str]) -> str:
         return "".join(chr(cp) for cp in codepoints)
     except ValueError:
         return ""
+
+
+def _occurrences_with_bboxes(
+    pattern_ids: Sequence[int],
+) -> dict[int, list[dict[str, object]]]:
+    if not pattern_ids:
+        return {}
+
+    rows = select(
+        """
+        SELECT
+            occ.id,
+            occ.id_pattern,
+            occ.glyph_ids,
+            bbox.bbox_x,
+            bbox.bbox_y,
+            bbox.bbox_height,
+            bbox.bbox_width
+        FROM T_NGRAM_OCCURENCES AS occ
+        LEFT JOIN T_NGRAM_OCCURENCES_BBOXES AS bbox ON bbox.id_occ = occ.id
+        WHERE occ.id_pattern = ANY(%s)
+        ORDER BY occ.id, bbox.id
+        """,
+        (list(pattern_ids),),
+    )
+
+    by_pattern: dict[int, dict[int, dict[str, object]]] = {}
+    for occ_id, pattern_id, glyph_ids, bbox_x, bbox_y, bbox_h, bbox_w in rows:
+        pattern_key = int(pattern_id)
+        occ_key = int(occ_id)
+        by_pattern.setdefault(pattern_key, {}).setdefault(
+            occ_key,
+            {
+                "id": occ_key,
+                "glyph_ids": [int(gid) for gid in (glyph_ids or []) if gid is not None],
+                "bboxes": [],
+            },
+        )
+        if bbox_x is not None and bbox_y is not None and bbox_h is not None and bbox_w is not None:
+            by_pattern[pattern_key][occ_key]["bboxes"].append(
+                {
+                    "bbox_x": float(bbox_x),
+                    "bbox_y": float(bbox_y),
+                    "bbox_height": float(bbox_h),
+                    "bbox_width": float(bbox_w),
+                }
+            )
+
+    return {
+        pattern_id: list(occurrences.values())
+        for pattern_id, occurrences in by_pattern.items()
+    }

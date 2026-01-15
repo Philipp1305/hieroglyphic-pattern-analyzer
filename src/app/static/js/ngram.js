@@ -5,7 +5,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const imageId = root.dataset.imageId;
-  const imageArea = root.querySelector("[data-ngram-image]");
+  const imageWrapper = root.querySelector("[data-ngram-image-wrapper]");
+  const imageCanvas = root.querySelector("[data-ngram-canvas]");
   const loadingOverlay = root.querySelector("[data-ngram-loading]");
   const loadingText = root.querySelector("[data-ngram-loading-text]");
   const loadingSpinner = root.querySelector("[data-ngram-loading-spinner]");
@@ -19,11 +20,31 @@ document.addEventListener("DOMContentLoaded", () => {
   const selectedUnicodes = root.querySelector("[data-ngram-selected-unicodes]");
   const selectedCount = root.querySelector("[data-ngram-selected-count]");
   const selectedLength = root.querySelector("[data-ngram-selected-length]");
-  const selectedMoreBtn = root.querySelector("[data-ngram-selected-more]");
   if (selectedGlyphs) {
     selectedGlyphs.style.fontFamily =
       "'Noto Sans Egyptian Hieroglyphs','Segoe UI Historic','Segoe UI Symbol','Noto Sans',sans-serif";
   }
+
+  const OCCURRENCE_COLORS = [
+    {
+      fill: "rgba(134, 239, 172, 0.25)",
+      stroke: "rgba(22, 163, 74, 0.9)",
+    },
+    {
+      fill: "rgba(96, 165, 250, 0.25)",
+      stroke: "rgba(59, 130, 246, 0.9)",
+    },
+    {
+      fill: "rgba(248, 180, 180, 0.25)",
+      stroke: "rgba(239, 68, 68, 0.85)",
+    },
+  ];
+
+  // Match zoom sensitivity from the sort view (view size scales by 0.93 per tick).
+  const ZOOM_STEP = 1 / 0.93;
+  // Do not allow zooming out beyond the initial fit (100%).
+  const MIN_ZOOM = 1;
+  const MAX_ZOOM = 10;
 
   const state = {
     items: [],
@@ -31,7 +52,15 @@ document.addEventListener("DOMContentLoaded", () => {
     activeLength: "all",
     search: "",
     selectedId: null,
+    imageMeta: null,
+    baseImage: null,
+    zoom: 1,
+    pan: { x: 0, y: 0 },
+    isPanning: false,
+    panStart: null,
   };
+
+  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
   const showOverlay = (message, { showSpinner = true } = {}) => {
     if (loadingOverlay) {
@@ -72,13 +101,13 @@ document.addEventListener("DOMContentLoaded", () => {
     emptyState.classList.toggle("hidden", !message);
   };
 
-  if (!imageId || !imageArea) {
+  if (!imageId || !imageCanvas) {
     showOverlay("No image selected", { showSpinner: false });
     setEmptyMessage("No image selected.");
     return;
   }
 
-  showOverlay("Loading manuscript…");
+  showOverlay(" Loading workspace…");
   setListLoading(true);
 
   loadImage(imageId);
@@ -102,6 +131,8 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .then((data) => {
         if (data && data.image) {
+          state.zoom = 1;
+          state.pan = { x: 0, y: 0 };
           applyImage(data.image);
         } else {
           throw new Error("Missing image payload");
@@ -116,9 +147,14 @@ document.addEventListener("DOMContentLoaded", () => {
   function applyImage(src) {
     const img = new Image();
     img.onload = () => {
-      imageArea.style.backgroundImage = `url(${src})`;
-      imageArea.classList.remove("opacity-0");
+      state.imageMeta = {
+        src,
+        width: img.naturalWidth || img.width || 0,
+        height: img.naturalHeight || img.height || 0,
+      };
+      state.baseImage = img;
       hideOverlay();
+      renderBoundingBoxes();
     };
     img.onerror = () => {
       console.error("[ngram] failed to load image");
@@ -175,6 +211,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const unicodeLabel =
       item?.unicode_label || unicodeValues.join(" ").trim() || "";
     const symbol = item?.symbol || formatUnicodeSymbol(unicodeLabel);
+    const occurrences = Array.isArray(item?.occurrences)
+      ? item.occurrences
+          .map(normalizeOccurrence)
+          .filter(Boolean)
+      : [];
 
     return {
       id: Number(item?.id) || 0,
@@ -183,6 +224,34 @@ document.addEventListener("DOMContentLoaded", () => {
       unicodeValues,
       unicodeLabel,
       symbol,
+      occurrences,
+    };
+  }
+
+  function normalizeOccurrence(occ) {
+    if (!occ) return null;
+    const bboxes = Array.isArray(occ?.bboxes)
+      ? occ.bboxes
+          .map((bbox) => ({
+            bbox_x: Number(bbox?.bbox_x),
+            bbox_y: Number(bbox?.bbox_y),
+            bbox_width: Number(bbox?.bbox_width),
+            bbox_height: Number(bbox?.bbox_height),
+          }))
+          .filter(
+            (bbox) =>
+              Number.isFinite(bbox.bbox_x) &&
+              Number.isFinite(bbox.bbox_y) &&
+              Number.isFinite(bbox.bbox_width) &&
+              Number.isFinite(bbox.bbox_height),
+          )
+      : [];
+    return {
+      id: Number(occ?.id) || 0,
+      glyphIds: Array.isArray(occ?.glyph_ids)
+        ? occ.glyph_ids.map((gid) => Number(gid)).filter(Number.isFinite)
+        : [],
+      bboxes,
     };
   }
 
@@ -356,10 +425,7 @@ document.addEventListener("DOMContentLoaded", () => {
       selectedUnicodes.textContent = "—";
       selectedCount.textContent = "Occurrences: —";
       selectedLength.textContent = "n = —";
-      if (selectedMoreBtn) {
-        selectedMoreBtn.setAttribute("aria-disabled", "true");
-        selectedMoreBtn.classList.add("pointer-events-none", "opacity-60");
-      }
+      renderBoundingBoxes();
       return;
     }
 
@@ -387,26 +453,7 @@ document.addEventListener("DOMContentLoaded", () => {
       : `Occurrences: ${selection.count || "—"}`;
     selectedLength.textContent = `n = ${selection.length || "—"}`;
 
-    if (selectedMoreBtn) {
-      selectedMoreBtn.removeAttribute("aria-disabled");
-      selectedMoreBtn.classList.remove("pointer-events-none", "opacity-60");
-    }
-  }
-
-  if (selectedMoreBtn) {
-    selectedMoreBtn.addEventListener("click", () => {
-      const selection = getSelectedItem();
-      if (!selection) {
-        return;
-      }
-      showPatternInfo(selection);
-    });
-  }
-
-  function showPatternInfo(item) {
-    window.alert(
-      `Pattern (n=${item.length}, occurrences=${item.count})\n${item.unicodeLabel || "No unicode data"}`,
-    );
+    renderBoundingBoxes();
   }
 
   function setGlyphContent(
@@ -478,4 +525,182 @@ document.addEventListener("DOMContentLoaded", () => {
       return "";
     }
   }
+
+  function renderBoundingBoxes() {
+    if (!imageCanvas) {
+      return;
+    }
+    const ctx = imageCanvas.getContext("2d");
+    if (!ctx) {
+      return;
+    }
+
+    const rect = imageCanvas.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    if (!width || !height) {
+      return;
+    }
+    const dpr = window.devicePixelRatio || 1;
+    const pixelWidth = Math.max(1, Math.round(width * dpr));
+    const pixelHeight = Math.max(1, Math.round(height * dpr));
+    if (
+      imageCanvas.width !== pixelWidth ||
+      imageCanvas.height !== pixelHeight
+    ) {
+      imageCanvas.width = pixelWidth;
+      imageCanvas.height = pixelHeight;
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
+    ctx.save();
+    ctx.scale(dpr, dpr);
+
+    const selection = getSelectedItem();
+    const occurrences = Array.isArray(selection?.occurrences)
+      ? selection.occurrences
+      : [];
+    const imgWidth = Number(state.imageMeta?.width) || 0;
+    const imgHeight = Number(state.imageMeta?.height) || 0;
+    const baseImage = state.baseImage;
+
+    if (baseImage && imgWidth && imgHeight) {
+      const baseScale = Math.max(width / imgWidth, height / imgHeight) || 1;
+      const scale = baseScale * (state.zoom || 1);
+      const drawWidth = imgWidth * scale;
+      const drawHeight = imgHeight * scale;
+      const maxPanX = Math.max(0, (drawWidth - width) / 2);
+      const maxPanY = Math.max(0, (drawHeight - height) / 2);
+      const panX = clamp(state.pan?.x || 0, -maxPanX, maxPanX);
+      const panY = clamp(state.pan?.y || 0, -maxPanY, maxPanY);
+      state.pan = { x: panX, y: panY };
+      const offsetX = (width - drawWidth) / 2 + panX;
+      const offsetY = (height - drawHeight) / 2 + panY;
+
+      ctx.drawImage(baseImage, offsetX, offsetY, drawWidth, drawHeight);
+
+      if (occurrences.length) {
+        occurrences.forEach((occ, idx) => {
+          const color =
+            OCCURRENCE_COLORS[
+              ((idx % OCCURRENCE_COLORS.length) + OCCURRENCE_COLORS.length) %
+                OCCURRENCE_COLORS.length
+            ] || OCCURRENCE_COLORS[0];
+          const fill = color.fill;
+          const stroke = color.stroke;
+          (occ.bboxes || []).forEach((bbox) => {
+            const left = offsetX + bbox.bbox_x * scale;
+            const top = offsetY + bbox.bbox_y * scale;
+            const boxWidth = bbox.bbox_width * scale;
+            const boxHeight = bbox.bbox_height * scale;
+            ctx.fillStyle = fill;
+            ctx.strokeStyle = stroke;
+            ctx.lineWidth = 2;
+            ctx.fillRect(left, top, boxWidth, boxHeight);
+            ctx.strokeRect(left, top, boxWidth, boxHeight);
+          });
+        });
+      }
+    }
+
+    ctx.restore();
+  }
+
+  function handleCanvasZoom(event) {
+    if (!imageCanvas || !state.imageMeta) {
+      return;
+    }
+    const rect = imageCanvas.getBoundingClientRect();
+    const imgWidth = Number(state.imageMeta?.width) || 0;
+    const imgHeight = Number(state.imageMeta?.height) || 0;
+    if (!imgWidth || !imgHeight) {
+      return;
+    }
+
+    const baseScale = Math.max(rect.width / imgWidth, rect.height / imgHeight) || 1;
+    const currentScale = baseScale * (state.zoom || 1);
+    const drawWidth = imgWidth * currentScale;
+    const drawHeight = imgHeight * currentScale;
+    const panX = state.pan?.x || 0;
+    const panY = state.pan?.y || 0;
+    const offsetX = (rect.width - drawWidth) / 2 + panX;
+    const offsetY = (rect.height - drawHeight) / 2 + panY;
+
+    const step = ZOOM_STEP || 1.07;
+    const factor = event.deltaY < 0 ? step : 1 / step;
+    const newZoom = clamp((state.zoom || 1) * factor, MIN_ZOOM, MAX_ZOOM);
+    const newScale = baseScale * newZoom;
+
+    const pointerX = event.clientX - rect.left;
+    const pointerY = event.clientY - rect.top;
+    const imgX = (pointerX - offsetX) / currentScale;
+    const imgY = (pointerY - offsetY) / currentScale;
+
+    const newDrawWidth = imgWidth * newScale;
+    const newDrawHeight = imgHeight * newScale;
+    const newBaseOffsetX = (rect.width - newDrawWidth) / 2;
+    const newBaseOffsetY = (rect.height - newDrawHeight) / 2;
+    const newOffsetX = pointerX - imgX * newScale;
+    const newOffsetY = pointerY - imgY * newScale;
+
+    const nextPanX = newOffsetX - newBaseOffsetX;
+    const nextPanY = newOffsetY - newBaseOffsetY;
+
+    state.zoom = newZoom;
+    state.pan = { x: nextPanX, y: nextPanY };
+    renderBoundingBoxes();
+  }
+
+  function handlePanStart(event) {
+    if (event.button !== 0 || !imageCanvas || !state.imageMeta) {
+      return;
+    }
+    event.preventDefault();
+    state.isPanning = true;
+    state.panStart = {
+      x: event.clientX,
+      y: event.clientY,
+      pan: { ...(state.pan || { x: 0, y: 0 }) },
+    };
+  }
+
+  function handlePanMove(event) {
+    if (!state.isPanning || !state.panStart) {
+      return;
+    }
+    event.preventDefault();
+    const dx = event.clientX - state.panStart.x;
+    const dy = event.clientY - state.panStart.y;
+    state.pan = {
+      x: (state.panStart.pan.x || 0) + dx,
+      y: (state.panStart.pan.y || 0) + dy,
+    };
+    renderBoundingBoxes();
+  }
+
+  function handlePanEnd() {
+    state.isPanning = false;
+    state.panStart = null;
+  }
+
+  if (imageCanvas) {
+    imageCanvas.addEventListener("mousedown", handlePanStart);
+    imageCanvas.addEventListener("mousemove", handlePanMove);
+    imageCanvas.addEventListener("mouseup", handlePanEnd);
+    imageCanvas.addEventListener("mouseleave", handlePanEnd);
+
+    imageCanvas.addEventListener(
+      "wheel",
+      (event) => {
+        if (!state.baseImage || !state.imageMeta) {
+          return;
+        }
+        event.preventDefault();
+        handleCanvasZoom(event);
+      },
+      { passive: false },
+    );
+  }
+
+  window.addEventListener("resize", () => renderBoundingBoxes());
 });

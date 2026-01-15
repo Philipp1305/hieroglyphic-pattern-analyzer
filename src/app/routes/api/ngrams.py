@@ -147,7 +147,12 @@ def _occurrences_with_bboxes(
                 "bboxes": [],
             },
         )
-        if bbox_x is not None and bbox_y is not None and bbox_h is not None and bbox_w is not None:
+        if (
+            bbox_x is not None
+            and bbox_y is not None
+            and bbox_h is not None
+            and bbox_w is not None
+        ):
             by_pattern[pattern_key][occ_key]["bboxes"].append(
                 {
                     "bbox_x": float(bbox_x),

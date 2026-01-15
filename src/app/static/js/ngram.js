@@ -212,9 +212,7 @@ document.addEventListener("DOMContentLoaded", () => {
       item?.unicode_label || unicodeValues.join(" ").trim() || "";
     const symbol = item?.symbol || formatUnicodeSymbol(unicodeLabel);
     const occurrences = Array.isArray(item?.occurrences)
-      ? item.occurrences
-          .map(normalizeOccurrence)
-          .filter(Boolean)
+      ? item.occurrences.map(normalizeOccurrence).filter(Boolean)
       : [];
 
     return {
@@ -617,7 +615,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const baseScale = Math.max(rect.width / imgWidth, rect.height / imgHeight) || 1;
+    const baseScale =
+      Math.max(rect.width / imgWidth, rect.height / imgHeight) || 1;
     const currentScale = baseScale * (state.zoom || 1);
     const drawWidth = imgWidth * currentScale;
     const drawHeight = imgHeight * currentScale;

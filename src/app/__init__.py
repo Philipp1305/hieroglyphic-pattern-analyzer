@@ -19,7 +19,7 @@ def create_app():
     app.register_blueprint(site_bp)
 
     socketio.init_app(
-        app, 
+        app,
         cors_allowed_origins="*",
         ping_interval=60,  # send pings every 30s
         ping_timeout=1800,  # allow up to 15 minutes for a pong before disconnect

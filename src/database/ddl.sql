@@ -331,6 +331,41 @@ comment on column t_ngram_occurences.glyph_ids
 is 'IDs of Glyphes';
 
 ------------------------------------------------------------------
+-- T_SENTENCES
+------------------------------------------------------------------
+-- TABLE
+create table T_SENTENCES (
+    id                      text not null, 
+    mdc_compact             text not null,
+    transcription           text,
+    translation             text,
+    tokens                  jsonb,  
+    match_occurrence_count  integer,
+    mdc_compact_status      text,
+    
+    constraint T_SENTENCES_PK primary key (id),
+    constraint UQ_MDC_COMPACT unique (mdc_compact)
+);
+
+-- COMMENTS
+comment on table T_SENTENCES
+is 'stores sentence data from TLA corpus for pattern matching';
+comment on column T_SENTENCES.id
+is 'Primary Key - TLA sentence ID';
+comment on column T_SENTENCES.mdc_compact
+is 'Manuel de Codage compact representation of hieroglyphic sequence';
+comment on column T_SENTENCES.transcription
+is 'Unicode transcription of the sentence';
+comment on column T_SENTENCES.translation
+is 'German translation of the sentence';
+comment on column T_SENTENCES.tokens
+is 'JSONB array of token data (mdc, pos, transcription, translation, lemma_id)';
+comment on column T_SENTENCES.match_occurrence_count
+is 'Number of times a matched pattern occurs in this sentence';
+comment on column T_SENTENCES.mdc_compact_status
+is 'Status of mdc_compact field (e.g., valid, contains_unresolved_tags, empty)';
+
+------------------------------------------------------------------
 -- T_NGRAM_OCCURENCES
 ------------------------------------------------------------------
 -- TABLE

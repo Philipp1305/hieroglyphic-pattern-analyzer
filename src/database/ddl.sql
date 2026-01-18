@@ -341,7 +341,6 @@ create table T_SENTENCES (
     translation             text,
     tokens                  jsonb,  
     match_occurrence_count  integer,
-    mdc_compact_status      text,
     
     constraint T_SENTENCES_PK primary key (id),
     constraint UQ_MDC_COMPACT unique (mdc_compact)
@@ -362,8 +361,6 @@ comment on column T_SENTENCES.tokens
 is 'JSONB array of token data (mdc, pos, transcription, translation, lemma_id)';
 comment on column T_SENTENCES.match_occurrence_count
 is 'Number of times a matched pattern occurs in this sentence';
-comment on column T_SENTENCES.mdc_compact_status
-is 'Status of mdc_compact field (e.g., valid, contains_unresolved_tags, empty)';
 
 ------------------------------------------------------------------
 -- T_NGRAM_OCCURENCES

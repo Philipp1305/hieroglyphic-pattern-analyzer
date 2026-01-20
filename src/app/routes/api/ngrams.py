@@ -37,16 +37,21 @@ def get_image_ngrams(image_id: int):
             for gardiner_id in (gardiner_ids or [])
             if gardiner_id is not None
         }
-        unicode_map = _unicode_map_for_ids(all_gardiner_ids)
+        gardiner_map = _gardiner_map_for_ids(all_gardiner_ids)
 
         for pattern_id, gardiner_ids, length, count in patterns:
             ids = [int(gid) for gid in gardiner_ids or [] if gid is not None]
             unicode_values = [
-                _normalize_unicode(unicode_map.get(gid, "")) for gid in ids
+                _normalize_unicode(gardiner_map.get(gid, {}).get("unicode", ""))
+                for gid in ids
             ]
-            unicode_values = [u for u in unicode_values if u]
-            unicode_label = " ".join(unicode_values)
-            symbol = _unicode_to_symbol(unicode_values)
+            symbol_values = [_unicode_to_symbol([u]) if u else "" for u in unicode_values]
+            gardiner_codes = [
+                _normalize_gardiner_code(gardiner_map.get(gid, {}).get("code", ""))
+                for gid in ids
+            ]
+            gardiner_label = " ".join(code for code in gardiner_codes if code)
+            symbol = "".join(val for val in symbol_values if val)
 
             items.append(
                 {
@@ -54,8 +59,9 @@ def get_image_ngrams(image_id: int):
                     "length": int(length),
                     "count": int(count),
                     "gardiner_ids": ids,
-                    "unicode_values": unicode_values,
-                    "unicode_label": unicode_label,
+                    "gardiner_codes": gardiner_codes,
+                    "gardiner_label": gardiner_label,
+                    "symbol_values": symbol_values,
                     "symbol": symbol,
                     "occurrences": occurrences_by_pattern.get(int(pattern_id), []),
                 }
@@ -78,14 +84,17 @@ def _image_exists(image_id: int) -> bool:
     return bool(rows)
 
 
-def _unicode_map_for_ids(ids: Iterable[int]) -> dict[int, str]:
+def _gardiner_map_for_ids(ids: Iterable[int]) -> dict[int, dict[str, str]]:
     id_list = list(ids)
     if not id_list:
         return {}
     rows = select(
-        "SELECT id, unicode FROM t_gardiner_codes WHERE id = ANY(%s)", (id_list,)
+        "SELECT id, code, unicode FROM t_gardiner_codes WHERE id = ANY(%s)",
+        (id_list,),
     )
-    return {int(row[0]): (row[1] or "") for row in rows}
+    return {
+        int(row[0]): {"code": row[1] or "", "unicode": row[2] or ""} for row in rows
+    }
 
 
 def _normalize_unicode(value: str | None) -> str:
@@ -93,6 +102,12 @@ def _normalize_unicode(value: str | None) -> str:
         return ""
     normalized = value.strip().upper()
     return normalized if normalized.startswith("U+") else f"U+{normalized}"
+
+
+def _normalize_gardiner_code(value: str | None) -> str:
+    if not value:
+        return ""
+    return value.strip().upper()
 
 
 def _unicode_to_symbol(unicode_values: Sequence[str]) -> str:

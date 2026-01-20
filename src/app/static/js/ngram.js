@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const emptyState = root.querySelector("[data-ngram-empty]");
   const searchInput = root.querySelector("[data-ngram-search]");
   const selectedGlyphs = root.querySelector("[data-ngram-selected-glyphs]");
-  const selectedUnicodes = root.querySelector("[data-ngram-selected-unicodes]");
+  const selectedCodes = root.querySelector("[data-ngram-selected-unicodes]");
   const selectedCount = root.querySelector("[data-ngram-selected-count]");
   const selectedLength = root.querySelector("[data-ngram-selected-length]");
   if (selectedGlyphs) {
@@ -205,12 +205,22 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function normalizePattern(item) {
-    const unicodeValues = Array.isArray(item?.unicode_values)
-      ? item.unicode_values
+    const gardinerCodes = Array.isArray(item?.gardiner_codes)
+      ? item.gardiner_codes
+          .map((code) => (code ?? "").toString().trim())
       : [];
-    const unicodeLabel =
-      item?.unicode_label || unicodeValues.join(" ").trim() || "";
-    const symbol = item?.symbol || formatUnicodeSymbol(unicodeLabel);
+    const symbolValues = Array.isArray(item?.symbol_values)
+      ? item.symbol_values.map((val) => (val ?? "").toString())
+      : [];
+    const gardinerLabel =
+      (typeof item?.gardiner_label === "string" &&
+        item.gardiner_label.trim()) ||
+      gardinerCodes.join(" ").trim() ||
+      "";
+    const symbol =
+      (typeof item?.symbol === "string" && item.symbol) ||
+      symbolValues.join("") ||
+      formatUnicodeSymbol(item?.unicode_values);
     const occurrences = Array.isArray(item?.occurrences)
       ? item.occurrences.map(normalizeOccurrence).filter(Boolean)
       : [];
@@ -219,8 +229,9 @@ document.addEventListener("DOMContentLoaded", () => {
       id: Number(item?.id) || 0,
       length: Number(item?.length) || 0,
       count: Number(item?.count) || 0,
-      unicodeValues,
-      unicodeLabel,
+      gardinerCodes,
+      gardinerLabel,
+      symbolValues,
       symbol,
       occurrences,
     };
@@ -341,8 +352,10 @@ document.addEventListener("DOMContentLoaded", () => {
         active === "all" || Number(item.length) === Number(active);
       const matchesSearch =
         !term ||
-        item.unicodeLabel.toLowerCase().includes(term) ||
-        (item.symbol || "").toLowerCase().includes(term);
+        item.gardinerLabel.toLowerCase().includes(term) ||
+        item.gardinerCodes.some((code) =>
+          code.toLowerCase().includes(term),
+        );
       return matchesLength && matchesSearch;
     });
   }
@@ -365,12 +378,12 @@ document.addEventListener("DOMContentLoaded", () => {
       "text-xl font-semibold tracking-widest text-text-light dark:text-text-dark leading-tight whitespace-nowrap overflow-x-auto overflow-y-hidden custom-scrollbar cursor-pointer";
     glyphText.style.fontFamily =
       "'Noto Sans Egyptian Hieroglyphs','Segoe UI Historic','Segoe UI Symbol','Noto Sans',sans-serif";
-    setGlyphContent(
-      glyphText,
-      item.unicodeValues,
-      item.symbol,
-      item.unicodeLabel,
-    );
+    setGlyphContent(glyphText, {
+      symbolValues: item.symbolValues,
+      symbolText: item.symbol,
+      codes: item.gardinerCodes,
+      fallbackLabel: item.gardinerLabel,
+    });
 
     const divider = document.createElement("div");
     divider.className =
@@ -412,7 +425,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const selection = getSelectedItem();
     if (
       !selectedGlyphs ||
-      !selectedUnicodes ||
+      !selectedCodes ||
       !selectedCount ||
       !selectedLength
     ) {
@@ -420,7 +433,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (!selection) {
       selectedGlyphs.textContent = "Select a pattern from the sidebar";
-      selectedUnicodes.textContent = "—";
+      selectedCodes.textContent = "—";
       selectedCount.textContent = "Occurrences: —";
       selectedLength.textContent = "n = —";
       renderBoundingBoxes();
@@ -428,23 +441,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     selectedGlyphs.textContent = "";
-    setGlyphContent(
-      selectedGlyphs,
-      selection.unicodeValues,
-      selection.symbol,
-      selection.unicodeLabel,
-    );
-    selectedUnicodes.innerHTML = "";
+    setGlyphContent(selectedGlyphs, {
+      symbolValues: selection.symbolValues,
+      symbolText: selection.symbol,
+      codes: selection.gardinerCodes,
+      fallbackLabel: selection.gardinerLabel,
+    });
+    selectedCodes.innerHTML = "";
     const items =
-      Array.isArray(selection.unicodeValues) && selection.unicodeValues.length
-        ? selection.unicodeValues
-        : [selection.unicodeLabel || "—"];
+      Array.isArray(selection.gardinerCodes) && selection.gardinerCodes.length
+        ? selection.gardinerCodes
+        : [selection.gardinerLabel || "—"];
     items.forEach((val) => {
       const row = document.createElement("p");
       row.className =
         "text-xs font-mono text-text-secondary-light dark:text-text-secondary-dark whitespace-nowrap";
       row.textContent = val || "—";
-      selectedUnicodes.appendChild(row);
+      selectedCodes.appendChild(row);
     });
     selectedCount.textContent = Number.isFinite(selection.count)
       ? `Occurrences: ${selection.count.toLocaleString()}`
@@ -454,63 +467,99 @@ document.addEventListener("DOMContentLoaded", () => {
     renderBoundingBoxes();
   }
 
-  function setGlyphContent(
-    element,
-    unicodeValues,
-    fallbackSymbol,
-    fallbackLabel,
-  ) {
+  function setGlyphContent(element, options = {}) {
+    const {
+      symbolValues = [],
+      symbolText = "",
+      codes = [],
+      fallbackLabel = "",
+    } = options;
     if (!element) return;
     element.innerHTML = "";
-    const values =
-      Array.isArray(unicodeValues) && unicodeValues.length ? unicodeValues : [];
-    if (!values.length) {
-      const fallback = fallbackSymbol || fallbackLabel || "";
-      if (fallback) {
-        element.textContent = fallback;
-        return;
+    const normalizedCodes = Array.isArray(codes)
+      ? codes
+          .map((code) => (code ?? "").toString().trim())
+          .filter((code) => code.length)
+      : [];
+    const normalizedSymbols = Array.isArray(symbolValues)
+      ? symbolValues.map((val) => (val ?? "").toString())
+      : [];
+
+    const maxLen = Math.max(normalizedSymbols.length, normalizedCodes.length);
+    if (maxLen > 0) {
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < maxLen; i += 1) {
+        const sym = (normalizedSymbols[i] || "").trim();
+        const code = normalizedCodes[i] || "";
+        const span = document.createElement("span");
+        span.className = "inline-block";
+        span.style.marginRight = "0.35rem";
+        if (sym) {
+          span.textContent = sym;
+        } else if (code) {
+          span.textContent = code;
+          span.className = [
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "text-red-600",
+            "dark:text-red-300",
+            "text-[11px]",
+            "px-1.5",
+            "py-0.5",
+            "rounded",
+            "border",
+            "border-red-200",
+            "dark:border-red-500/60",
+            "bg-red-50",
+            "dark:bg-red-900/30",
+            "leading-none",
+            "font-semibold",
+          ].join(" ");
+        } else {
+          span.textContent = "?";
+          span.className = [
+            "inline-flex",
+            "items-center",
+            "justify-center",
+            "text-red-500",
+            "font-semibold",
+          ].join(" ");
+        }
+        frag.appendChild(span);
       }
-      const unknown = document.createElement("span");
-      unknown.textContent = "?";
-      unknown.className = "text-red-500 font-semibold";
-      element.appendChild(unknown);
+      element.appendChild(frag);
       return;
     }
-    const frag = document.createDocumentFragment();
-    values.forEach((val) => {
-      const span = document.createElement("span");
-      span.className = "inline-block";
-      const code = (val || "").toString().trim().replace(/^U\+/i, "");
-      if (!code) {
-        span.textContent = "?";
-        span.classList.add("text-red-500", "font-semibold");
-      } else {
-        const cp = parseInt(code, 16);
-        if (Number.isNaN(cp)) {
-          span.textContent = "?";
-          span.classList.add("text-red-500", "font-semibold");
-        } else {
-          try {
-            span.textContent = String.fromCodePoint(cp);
-          } catch (err) {
-            span.textContent = "?";
-            span.classList.add("text-red-500", "font-semibold");
-          }
-        }
-      }
-      frag.appendChild(span);
-    });
-    element.appendChild(frag);
+
+    const symbol = (symbolText || "").toString().trim();
+    if (symbol) {
+      element.textContent = symbol;
+      return;
+    }
+
+    const fallback =
+      (typeof fallbackLabel === "string" && fallbackLabel.trim()) || "";
+    if (fallback) {
+      element.textContent = fallback;
+      return;
+    }
+
+    const unknown = document.createElement("span");
+    unknown.textContent = "?";
+    unknown.className = "text-red-500 font-semibold";
+    element.appendChild(unknown);
   }
 
-  function formatUnicodeSymbol(unicodeString) {
-    if (!unicodeString || typeof unicodeString !== "string") {
+  function formatUnicodeSymbol(unicodeInput) {
+    if (!unicodeInput) {
       return "";
     }
-    const parts = unicodeString
-      .trim()
-      .split(/\s+/)
-      .map((part) => part.replace(/^U\+/i, ""))
+    const values = Array.isArray(unicodeInput)
+      ? unicodeInput
+      : unicodeInput.toString().split(/\s+/);
+    const parts = values
+      .map((part) => part.replace(/^U\+/i, "").trim())
       .filter(Boolean);
     if (!parts.length) {
       return "";

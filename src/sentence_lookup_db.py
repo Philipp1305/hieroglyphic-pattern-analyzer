@@ -1,236 +1,147 @@
 """Match Gardiner code patterns to TLA sentence data using database."""
 
-import os
 import re
 from typing import Optional
 
-import psycopg2
-from psycopg2.extras import RealDictCursor
+# Using the project's standard tool
+from src.database.tools import select
 
-from dotenv import load_dotenv
-load_dotenv()
-
-
-# Database connection parameters from environment variables
-DB_PARAMS = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "port": int(os.getenv("DB_PORT", "18936")),
-    "database": os.getenv("DB_NAME", "defaultdb"),
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASSWORD"),
-    "sslmode": "require"
-}
-
+def _get_codes(mdc: str) -> list[str]:
+    """Return a list of individual codes from an MDC string."""
+    if not mdc:
+        return []
+    return re.findall(r"[A-Z][a-z]?\d+[A-Z]?", mdc)
 
 def _normalize(mdc: str) -> str:
-    """Extract Gardiner codes from MDC string."""
-    return "-".join(re.findall(r"[A-Z][a-z]?\d+[A-Z]?", mdc))
+    """Flatten MDC into a dash-separated string for searching."""
+    return "-".join(_get_codes(mdc))
 
-
-def lookup_all(pattern: list[str], db_params: dict = DB_PARAMS) -> list[dict]:
-    """
-    Find all sentences containing the given Gardiner code pattern.
-    Returns list of dicts with sentence info.
-    """
+def lookup_all(pattern: list[str]) -> list[dict]:
     target = "-".join(pattern)
+    target_len = len(pattern)
     results = []
     
-    try:
-        conn = psycopg2.connect(**db_params)
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        
-        # Fetch all sentences
-        cur.execute("""
-            SELECT id, mdc_compact, transcription, translation, tokens
-            FROM T_SENTENCES
-        """)
-        
-        rows = cur.fetchall()
-        
-        # Search for the pattern in all sentences
-        for r in rows:
-            normalized_mdc = _normalize(r["mdc_compact"])
-            if target in normalized_mdc:
-                occurrence_count = normalized_mdc.count(target)
-                tokens = r["tokens"] or []
-                
-                # Calculate corpus frequencies
-                target_lemma_ids = {
-                    token["lemma_id"] 
-                    for token in tokens 
-                    if token.get("lemma_id")
-                }
-                
-                frequencies = _count_corpus_occurrences(target_lemma_ids, cur)
-                
-                # Enrich tokens with frequencies
-                for token in tokens:
-                    lid = token.get("lemma_id", "")
-                    token["corpus_frequency"] = frequencies.get(lid, 0)
-                
-                results.append({
-                    "id": r["id"],
-                    "mdc_compact": r["mdc_compact"],
-                    "transcription": r["transcription"],
-                    "translation": r["translation"],
-                    "tokens": tokens,
-                    "match_occurrence_count": occurrence_count,
-                })
-        
-        cur.close()
-        conn.close()
-        return results
-        
-    except Exception as e:
-        print(f"Database error: {e}")
-        return []
-
-
-def lookup(pattern: list[str], db_params: dict = DB_PARAMS) -> Optional[dict]:
-    """
-    Find first sentence containing the given Gardiner code pattern.
-    Returns dict with sentence info, including lemma IDs for all tokens
-    and their frequency counts across the entire corpus.
-    """
-    target = "-".join(pattern)
+    # Fetch sentences
+    rows = select("""
+        SELECT id, mdc_compact, transcription, translation, tokens
+        FROM T_SENTENCES
+    """)
     
-    try:
-        conn = psycopg2.connect(**db_params)
-        cur = conn.cursor(cursor_factory=RealDictCursor)
+    for r in rows:
+        sent_id, mdc_compact, transcription, translation, tokens = r
+        if not tokens: 
+            tokens = []
+            
+        normalized_mdc = _normalize(mdc_compact)
         
-        # 1. Find sentences and normalize them in Python to match the pattern
-        cur.execute("""
-            SELECT id, mdc_compact, transcription, translation, tokens
-            FROM T_SENTENCES
-        """)
-        
-        rows = cur.fetchall()
-        row = None
-        
-        # Search for the pattern in normalized mdc_compact
-        for r in rows:
-            normalized_mdc = _normalize(r["mdc_compact"])
-            if target in normalized_mdc:
-                row = r
-                break
-        
-        if not row:
-            cur.close()
-            conn.close()
-            return None
-        
-        # Calculate occurrence count
-        normalized_mdc = _normalize(row["mdc_compact"])
-        occurrence_count = normalized_mdc.count(target)
-        
-        # 2. Extract token data
-        tokens = row["tokens"] or []
-        
-        # 3. Calculate corpus frequencies for these lemmas
-        target_lemma_ids = {
-            token["lemma_id"] 
-            for token in tokens 
-            if token.get("lemma_id")
-        }
-        
-        frequencies = _count_corpus_occurrences(target_lemma_ids, cur)
-        
-        # 4. Enrich tokens with their frequencies
-        for token in tokens:
-            lid = token.get("lemma_id", "")
-            token["corpus_frequency"] = frequencies.get(lid, 0)
-        
-        result = {
-            "id": row["id"],
-            "mdc_compact": row["mdc_compact"],
-            "transcription": row["transcription"],
-            "translation": row["translation"],
-            "tokens": tokens,
-            "match_occurrence_count": occurrence_count,
-        }
-        
-        cur.close()
-        conn.close()
-        
-        return result
-        
-    except Exception as e:
-        print(f"Database error: {e}")
-        return None
+        # 1. Check if pattern exists in the sentence
+        if target in normalized_mdc:
+            occurrence_count = normalized_mdc.count(target)
+            
+            # 2. Map global code indices to specific tokens
+            code_map = []  # list of (token_index, token_data) for every code in the sentence
+            
+            for t_idx, token in enumerate(tokens):
+                t_mdc = token.get("mdc", "")
+                t_codes = _get_codes(t_mdc)
+                for _ in t_codes:
+                    code_map.append((t_idx, token))
+
+            # 3. Find the pattern matches in the list of codes
+            all_codes = _get_codes(mdc_compact)
+            
+            # Find all start indices of the pattern
+            match_indices = []
+            for i in range(len(all_codes) - target_len + 1):
+                if all_codes[i : i + target_len] == pattern:
+                    match_indices.append(i)
+
+            # 4. Extract the unique tokens involved in these matches
+            matching_tokens = []
+            seen_token_indices = set()
+            lemma_ids_to_fetch = set()
+
+            for start_idx in match_indices:
+                for i in range(target_len):
+                    code_idx = start_idx + i
+                    if code_idx < len(code_map):
+                        t_idx, token = code_map[code_idx]
+                        if t_idx not in seen_token_indices:
+                            matching_tokens.append(token)
+                            seen_token_indices.add(t_idx)
+                            if token.get("lemma_id"):
+                                lemma_ids_to_fetch.add(token["lemma_id"])
+
+            # 5. Bulk fetch frequencies
+            frequencies = _count_corpus_occurrences(lemma_ids_to_fetch)
+            
+            for token in matching_tokens:
+                lid = token.get("lemma_id", "")
+                token["corpus_frequency"] = frequencies.get(lid, 0)
+            
+            results.append({
+                "id": sent_id,
+                "mdc_compact": mdc_compact,
+                "transcription": transcription,
+                "translation": translation,
+                "matching_tokens": matching_tokens, 
+                "match_occurrence_count": occurrence_count,
+            })
+
+    # Sort by number of matches (descending), then by ID
+    results.sort(key=lambda x: (x['match_occurrence_count'], x['id']), reverse=True)
+    return results
 
 
-def _count_corpus_occurrences(target_ids: set[str], cur) -> dict[str, int]:
-    """
-    Count occurrences of specified lemma IDs across the entire corpus.
-    """
-    counts = {lid: 0 for lid in target_ids}
-    
+def _count_corpus_occurrences(target_ids: set[str]) -> dict[str, int]:
     if not target_ids:
-        return counts
+        return {}
     
-    # Query all sentences and count lemma occurrences
-    # This uses JSONB array operations for efficient searching
-    for lemma_id in target_ids:
-        cur.execute("""
-            SELECT COUNT(*) as count
-            FROM T_SENTENCES,
-            jsonb_array_elements(tokens) as token
-            WHERE token->>'lemma_id' = %s
-        """, (lemma_id,))
-        
-        result = cur.fetchone()
-        counts[lemma_id] = result["count"] if result else 0
+    rows = select("""
+        SELECT token->>'lemma_id', COUNT(*)
+        FROM T_SENTENCES,
+        jsonb_array_elements(tokens) as token
+        WHERE token->>'lemma_id' IN %s
+        GROUP BY token->>'lemma_id'
+    """, (tuple(target_ids),))
     
-    return counts
+    return {row[0]: row[1] for row in rows}
 
 
 if __name__ == "__main__":
-    # Test with a sample pattern
-    test = ["D21", "Aa1"]  # Pattern from first row in database
-    pattern_str = "-".join(test)
+    test_pattern = ["F20", "O1", "Z1", "W24", "W24", "W24", "A17", "A52", "N35", "F20", "X1", "D21", "S19"]
+    pattern_str = "-".join(test_pattern)
     
-    # Find ALL matches
-    print(f"Searching for pattern: {pattern_str}")
-    results = lookup_all(test)
-    print(f"\nFound {len(results)} matching sentences\n")
+    print(f"Searching for pattern: {pattern_str}...")
+    results = lookup_all(test_pattern)
+    print(f"\nFound {len(results)} matching sentences.")
     
-    # Show first match in detail
-    if not results:
-        print("No matches found")
+    if results:
+        limit = 5
+        print(f"Showing top {limit} 'most likely' matches (sorted by occurrence count):")
+        
+        for i, result in enumerate(results[:limit], 1):
+            print("\n" + "=" * 60)
+            print(f"MATCH {i} (Count: {result['match_occurrence_count']})")
+            print("=" * 60)
+            print(f"ID: {result['id']}")
+            print(f"Transcription: {result['transcription']}")
+            print(f"Translation: {result['translation']}")
+            print("-" * 20)
+            print(f"Tokens containing pattern:")
+            
+            for t in result['matching_tokens']:
+                lemma = t.get('lemma_id', 'N/A')
+                freq = t.get('corpus_frequency', 0)
+                mdc = t.get('mdc', '')
+                pos = t.get('pos', 'N/A')
+                
+                # Retrieve transliteration (transcription) and translation
+                translit = t.get('transcription', '-')
+                transl = t.get('translation', '-')
+
+                print(f"  [POS: {pos:<5}] Lemma: {lemma:<7} | Freq: {freq:<4} | MdC: {mdc}")
+                print(f"      -> Translit: {translit}")
+                print(f"      -> Transl:   {transl}")
     else:
-        result = results[0]
-    
-    if result:
-        print("\n" + "=" * 60)
-        print(f"SENTENCE MATCH FOR PATTERN: {pattern_str}")
-        print("=" * 60)
-        print(f"ID: {result['id']}")
-        print(f"Transcription: {result['transcription']}")
-        print(f"Translation: {result['translation']}")
-        print(f"Match Occurrence Count: {result['match_occurrence_count']}")
-        print("\n" + "=" * 60)
-        print(f"PATTERN TOKENS ({pattern_str}):")
-        print("=" * 60)
-        
-        # Find which tokens match the pattern
-        normalized_mdc = _normalize(result['mdc_compact'])
-        pattern_start = normalized_mdc.find(pattern_str)
-        
-        # Count how many pattern codes come before the match
-        codes_before = normalized_mdc[:pattern_start].split("-") if pattern_start > 0 else []
-        token_start_idx = len([c for c in codes_before if c])  # Filter empty strings
-        
-        # Show only the tokens that match the pattern
-        for i in range(len(test)):
-            token_idx = token_start_idx + i
-            if token_idx < len(result['tokens']):
-                t = result['tokens'][token_idx]
-                print(f"\nToken {i} ({test[i]}):")
-                print(f"  MDC: {t.get('mdc', '')}")
-                print(f"  Transcription: {t.get('transcription', '')}")
-                print(f"  Translation: {t.get('translation', '')}")
-                print(f"  POS: {t.get('pos', '')}")
-                print(f"  Lemma ID: {t.get('lemma_id', '')}")
-                print(f"  Corpus Frequency: {t.get('corpus_frequency', 0)}")
-    else:
-        print("No match found")
+        print("No matches found.")

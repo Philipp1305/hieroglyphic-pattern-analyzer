@@ -76,11 +76,27 @@ def lookup_all(pattern: list[str], min_subpattern_len: int = 5) -> list[dict]:
     target_len = len(pattern)
     
     # For long patterns, also search for sub-patterns
+    # This helps find partial matches when the full sequence is too specific
     search_patterns = [(pattern, target_len, "full")]
-    if target_len > 15:
-        # Generate sliding window sub-patterns
-        subpattern_len = max(min_subpattern_len, 5)
-        for i in range(0, target_len - subpattern_len + 1, subpattern_len // 2):
+    
+    # Adaptive sub-pattern length based on total pattern length
+    if target_len >= 10:
+        # Determine sub-pattern length based on pattern size
+        if target_len >= 30:
+            subpattern_len = 7  # Very long patterns: use 7-code chunks
+        elif target_len >= 20:
+            subpattern_len = 6  # Long patterns: use 6-code chunks
+        elif target_len >= 15:
+            subpattern_len = 5  # Medium patterns: use 5-code chunks
+        else:
+            subpattern_len = 4  # Shorter patterns (10-14): use 4-code chunks
+        
+        # Override with minimum if specified
+        subpattern_len = max(min_subpattern_len, subpattern_len)
+        
+        # Generate sliding window sub-patterns, overlapping by half
+        step = max(2, subpattern_len // 2)  # Step by half the window size
+        for i in range(0, target_len - subpattern_len + 1, step):
             sub = pattern[i:i + subpattern_len]
             if len(sub) >= subpattern_len:
                 search_patterns.append((sub, len(sub), "partial"))
@@ -198,39 +214,47 @@ def _count_corpus_occurrences(target_ids: set[str]) -> dict[str, int]:
 
 
 if __name__ == "__main__":
-    test_pattern = ["D21", "Aa1", "Y1", "V31"]  # Use proper casing: Aa not AA
-    pattern_str = "-".join(test_pattern)
+    # Test multiple patterns
+    test_patterns = [
+        ["D21", "Aa1", "Y1", "V31"],  # Short pattern
+        ["N35", "X1", "Q1", "D4", "A40"],  # Medium pattern 
+    ]
     
-    print(f"Searching for pattern: {pattern_str}...")
-    results = lookup_all(test_pattern)
-    print(f"\nFound {len(results)} matching sentences.")
-    
-    if results:
-        limit = 5
-        print(f"Showing top {limit} 'most likely' matches (sorted by occurrence count):")
+    for test_pattern in test_patterns:
+        pattern_str = "-".join(test_pattern)
         
-        for i, result in enumerate(results[:limit], 1):
-            print("\n" + "=" * 60)
-            print(f"MATCH {i} (Count: {result['match_occurrence_count']})")
-            print("=" * 60)
-            print(f"ID: {result['id']}")
-            print(f"Transcription: {result['transcription']}")
-            print(f"Translation: {result['translation']}")
-            print("-" * 20)
-            print(f"Tokens containing pattern:")
+        print(f"\n{'='*70}")
+        print(f"Searching for pattern (n={len(test_pattern)}): {pattern_str[:50]}...")
+        print(f"{'='*70}")
+        results = lookup_all(test_pattern)
+        print(f"Found {len(results)} matching sentences.")
+        
+        if results:
+            limit = 5
+            print(f"Showing top {limit} 'most likely' matches (sorted by occurrence count):")
             
-            for t in result['matching_tokens']:
-                lemma = t.get('lemma_id', 'N/A')
-                freq = t.get('corpus_frequency', 0)
-                mdc = t.get('mdc', '')
-                pos = t.get('pos', 'N/A')
+            for i, result in enumerate(results[:limit], 1):
+                print("\n" + "=" * 60)
+                print(f"MATCH {i} (Count: {result['match_occurrence_count']})")
+                print("=" * 60)
+                print(f"ID: {result['id']}")
+                print(f"Transcription: {result['transcription']}")
+                print(f"Translation: {result['translation']}")
+                print("-" * 20)
+                print(f"Tokens containing pattern:")
                 
-                # Retrieve transliteration (transcription) and translation
-                translit = t.get('transcription', '-')
-                transl = t.get('translation', '-')
+                for t in result['matching_tokens']:
+                    lemma = t.get('lemma_id', 'N/A')
+                    freq = t.get('corpus_frequency', 0)
+                    mdc = t.get('mdc', '')
+                    pos = t.get('pos', 'N/A')
+                    
+                    # Retrieve transliteration (transcription) and translation
+                    translit = t.get('transcription', '-')
+                    transl = t.get('translation', '-')
 
-                print(f"  [POS: {pos:<5}] Lemma: {lemma:<7} | Freq: {freq:<4} | MdC: {mdc}")
-                print(f"      -> Translit: {translit}")
-                print(f"      -> Transl:   {transl}")
-    else:
-        print("No matches found.")
+                    print(f"  [POS: {pos:<5}] Lemma: {lemma:<7} | Freq: {freq:<4} | MdC: {mdc}")
+                    print(f"      -> Translit: {translit}")
+                    print(f"      -> Transl:   {transl}")
+        else:
+            print("No matches found.")

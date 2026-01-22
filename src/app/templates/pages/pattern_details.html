@@ -1,0 +1,225 @@
+<div
+  class="flex h-screen flex-col bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark"
+  data-pattern-root
+  data-image-id="{{ image_id or '' }}"
+  data-pattern-id="{{ pattern_id or '' }}"
+>
+  <header
+    class="w-full border-b border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark h-16"
+  >
+    <div
+      class="grid h-full w-full grid-cols-3 items-center px-4 sm:px-6 lg:px-8"
+    >
+      <div class="flex justify-start">
+        <a
+          href="{% if image_id %}{{ url_for('site.ngrams_page', id=image_id) }}{% else %}{{ url_for('site.ngrams_page') }}{% endif %}"
+          class="inline-flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark px-4 py-2 text-sm font-semibold transition-colors hover:border-primary hover:text-primary"
+        >
+          <span class="material-symbols-outlined text-base">arrow_back</span>
+          Back to N-grams
+        </a>
+      </div>
+      <div class="flex items-center justify-center gap-3">
+        <div class="size-8"></div>
+        <h2
+          class="text-2xl font-bold text-primary leading-tight tracking-[-0.015em]"
+          style="font-family: &quot;Caesar Dressing&quot;, cursive"
+        >
+          GlyPat
+        </h2>
+      </div>
+      <div class="flex items-center justify-end">
+        <button
+          id="themeToggle"
+          type="button"
+          class="inline-flex items-center justify-center rounded-full border border-border-light dark:border-border-dark p-2 text-text-light dark:text-text-dark transition-colors hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          aria-pressed="false"
+        >
+          <span class="sr-only">Toggle color theme</span>
+          <span
+            class="material-symbols-outlined text-xl leading-none dark:hidden"
+            >dark_mode</span
+          >
+          <span
+            class="material-symbols-outlined hidden text-xl leading-none dark:inline"
+            >light_mode</span
+          >
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 overflow-auto">
+    <div class="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+      <div
+        class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark shadow-lg overflow-hidden"
+      >
+        <div
+          class="flex flex-col gap-4 border-b border-border-light dark:border-border-dark px-6 py-6 md:flex-row md:items-center"
+        >
+          <div class="space-y-2">
+            <p
+              class="text-[11px] font-semibold uppercase tracking-[0.28em] text-primary"
+            >
+              Detected pattern
+            </p>
+            <div
+              class="hieroglyph-display text-3xl font-semibold tracking-[0.24em] text-text-light dark:text-text-dark"
+              data-pattern-glyphs
+            >
+              —
+            </div>
+            <div
+              class="flex flex-wrap gap-2 text-xs text-text-secondary-light dark:text-text-secondary-dark"
+              data-pattern-codes
+            ></div>
+          </div>
+          <div class="flex flex-col gap-3 md:ml-auto">
+            <div
+              class="rounded-xl border border-border-light dark:border-border-dark bg-white/80 dark:bg-gray-900/60 px-4 py-3 min-w-[180px]"
+            >
+              <p
+                class="text-[11px] uppercase tracking-widest text-text-secondary-light dark:text-text-secondary-dark font-semibold"
+              >
+                Number of occurrences
+              </p>
+              <p class="text-lg font-bold text-text-light dark:text-text-dark" data-pattern-occurrences>
+                —
+              </p>
+            </div>
+            <div
+              class="rounded-xl border border-border-light dark:border-border-dark bg-white/80 dark:bg-gray-900/60 px-4 py-3 min-w-[180px]"
+            >
+              <p
+                class="text-[11px] uppercase tracking-widest text-text-secondary-light dark:text-text-secondary-dark font-semibold"
+              >
+                Pattern length
+              </p>
+              <p class="text-lg font-mono font-bold text-primary" data-pattern-length>
+                n = —
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col lg:flex-row min-h-[520px]">
+          <aside
+            class="w-full lg:w-80 flex-shrink-0 border-b border-border-light dark:border-border-dark lg:border-b-0 lg:border-r bg-card-light/70 dark:bg-card-dark/70 backdrop-blur-sm"
+          >
+            <div
+              class="border-b border-border-light/80 dark:border-border-dark/80 px-5 py-4"
+            >
+              <p
+              class="text-[11px] uppercase tracking-widest font-semibold text-text-secondary-light dark:text-text-secondary-dark"
+            >
+                Found sentences
+              </p>
+            </div>
+            <div class="p-4 space-y-2">
+              <div
+                class="rounded-lg border border-dashed border-border-light dark:border-border-dark bg-white/70 dark:bg-gray-900/40 px-3 py-2 text-xs text-text-secondary-light dark:text-text-secondary-dark hidden"
+                data-pattern-sentences-loading
+              >
+                Loading sentences…
+              </div>
+              <div
+                class="rounded-lg border border-dashed border-border-light dark:border-border-dark bg-white/70 dark:bg-gray-900/40 px-3 py-2 text-xs text-text-secondary-light dark:text-text-secondary-dark hidden"
+                data-pattern-sentences-empty
+              >
+                No sentences found for this pattern.
+              </div>
+            </div>
+            <nav
+              class="flex flex-col divide-y divide-border-light/70 dark:divide-border-dark/70 custom-scrollbar max-h-[360px] overflow-y-auto"
+              data-pattern-sentences-list
+            ></nav>
+          </aside>
+
+          <div class="flex-1 bg-card-light/60 dark:bg-card-dark/60 px-6 py-6 space-y-8">
+            <section class="space-y-3">
+              <h3
+                class="flex items-center gap-2 text-sm font-bold text-text-light dark:text-text-dark uppercase tracking-wide"
+              >
+                <span class="material-symbols-outlined text-primary" style="font-size: 20px;"
+                  >rule</span
+                >
+                Matching Tokens
+              </h3>
+              <div
+                class="rounded-xl border border-border-light dark:border-border-dark bg-white/80 dark:bg-gray-900/60 px-5 py-4 shadow-sm space-y-3"
+              >
+                <div
+                  class="text-sm text-text-secondary-light dark:text-text-secondary-dark hidden"
+                  data-pattern-tokens-empty
+                >
+                  No tokens found for this pattern yet.
+                </div>
+                <div class="space-y-2" data-pattern-tokens></div>
+              </div>
+            </section>
+            
+            <section class="space-y-3">
+              <h3
+                class="flex items-center gap-2 text-sm font-bold text-text-light dark:text-text-dark uppercase tracking-wide"
+              >
+                <span class="material-symbols-outlined text-primary" style="font-size: 20px;"
+                  >translate</span
+                >
+                Transcription
+              </h3>
+              <div
+                class="rounded-xl border border-border-light dark:border-border-dark bg-white/80 dark:bg-gray-900/60 px-5 py-4 shadow-sm"
+              >
+                <p class="text-2xl font-medium italic tracking-wide text-text-light dark:text-text-dark" data-pattern-transcription>
+                  —
+                </p>
+              </div>
+            </section>
+
+            <section class="space-y-4">
+              <h3
+                class="flex items-center gap-2 text-sm font-bold text-text-light dark:text-text-dark uppercase tracking-wide"
+              >
+                <span class="material-symbols-outlined text-primary" style="font-size: 20px;"
+                  >auto_stories</span
+                >
+                Meaning
+              </h3>
+              <div
+                class="rounded-xl border border-border-light dark:border-border-dark bg-white/80 dark:bg-gray-900/60 px-5 py-5 shadow-sm space-y-4"
+              >
+                <p class="text-lg text-text-secondary-light dark:text-text-secondary-dark leading-relaxed" data-pattern-translation>
+                  —
+                </p>
+              </div>
+            </section>
+
+            <section class="space-y-3">
+              <h3
+                class="flex items-center gap-2 text-sm font-bold text-text-light dark:text-text-dark uppercase tracking-wide"
+              >
+                <span class="material-symbols-outlined text-primary" style="font-size: 20px;"
+                  >link</span
+                >
+                External References
+              </h3>
+              <div class="gap-3">
+                <a
+                  class="flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/10 px-4 py-4 text-sm font-semibold text-text-light dark:text-text-dark transition-colors hover:bg-primary/15"
+                  href="https://tla.bbaw.de/"
+                  target="_blank"
+                >
+                  <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary">open_in_new</span>
+                    <span>Thesaurus Linguae Aegyptiae</span>
+                  </div>
+                  <span class="text-xs font-bold text-primary underline-offset-4">ID</span>
+                </a>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

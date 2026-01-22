@@ -412,3 +412,146 @@ comment on column T_NGRAM_OCCURENCES_BBOXES.bbox_height
 is 'bounding box height';
 comment on column T_NGRAM_OCCURENCES_BBOXES.bbox_width
 is 'bounding box width';
+
+
+
+------------------------------------------------------------------
+-- T_SUFFIXARRAY_PATTERNS
+------------------------------------------------------------------
+-- TABLE
+create table T_SUFFIXARRAY_PATTERNS
+(
+	id              integer not null,
+	id_image        integer not null,
+	gardiner_ids    integer[] not null,
+	sequence_length integer not null,
+	sequence_count  integer not null,
+	constraint      T_SUFFIXARRAY_PATTERNS_PK primary key (id),
+	constraint      T_SUFFIXARRAY_PATTERNS_FK foreign key (id_image) references T_IMAGES(id) on delete cascade
+);
+
+-- SEQUENCE
+create sequence T_SUFFIXARRAY_PATTERN_SEQ
+start with 1
+increment by 1;
+
+-- TRIGGER FUNCTION
+create or replace function SET_T_SUFFIXARRAY_PATTERN_ID()
+returns trigger as $$
+begin
+    new.id := nextval('T_SUFFIXARRAY_PATTERN_SEQ');
+    return new;
+end;
+$$ language plpgsql;
+
+-- TRIGGER
+create or replace trigger T_SUFFIXARRAY_PATTERN_TR
+before insert on T_SUFFIXARRAY_PATTERNS
+for each row
+execute function SET_T_SUFFIXARRAY_PATTERN_ID();
+
+-- COMMENTS
+comment on table T_SUFFIXARRAY_PATTERNS
+is 'stores the repeated sequences found by the suffix array method';
+comment on column T_SUFFIXARRAY_PATTERNS.id
+is 'Primary Key';
+comment on column T_SUFFIXARRAY_PATTERNS.id_image
+is 'Foreign Key to T_IMAGES';
+comment on column T_SUFFIXARRAY_PATTERNS.gardiner_ids
+is 'IDs of Gardiner Codes in the repeated sequence';
+comment on column T_SUFFIXARRAY_PATTERNS.sequence_length
+is 'length of the repeated sequence';
+comment on column T_SUFFIXARRAY_PATTERNS.sequence_count
+is 'number of occurences of the repeated sequence';
+
+
+
+------------------------------------------------------------------
+-- T_SUFFIXARRAY_OCCURENCES
+------------------------------------------------------------------
+-- TABLE
+CREATE TABLE T_SUFFIXARRAY_OCCURENCES (
+    id          integer not null,
+    id_pattern  integer not null,
+    glyph_ids   integer[] not null,
+    constraint  T_SUFFIXARRAY_OCCURENCES_PK primary key (id),
+    constraint  T_SUFFIXARRAY_OCCURENCES_FK foreign key (id_pattern) references T_SUFFIXARRAY_PATTERNS(id) on delete cascade
+);
+
+-- SEQUENCE
+CREATE SEQUENCE T_SUFFIXARRAY_OCCURENCES_SEQ
+START WITH 1
+INCREMENT BY 1;
+
+-- TRIGGER FUNCTION
+CREATE OR REPLACE FUNCTION SET_T_SUFFIXARRAY_OCCURENCES_ID()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.id := nextval('T_SUFFIXARRAY_OCCURENCES_SEQ');
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- TRIGGER
+CREATE OR REPLACE TRIGGER T_SUFFIXARRAY_OCCURENCES_TR
+BEFORE INSERT ON T_SUFFIXARRAY_OCCURENCES
+FOR EACH ROW
+EXECUTE FUNCTION SET_T_SUFFIXARRAY_OCCURENCES_ID();
+
+-- COMMENTS
+comment on table T_SUFFIXARRAY_OCCURENCES
+is 'stores the occurences of suffix array patterns with the glyph ids';
+comment on column T_SUFFIXARRAY_OCCURENCES.id
+is 'Primary Key';
+comment on column T_SUFFIXARRAY_OCCURENCES.id_pattern
+is 'Foreign Key to T_SUFFIXARRAY_PATTERNS';
+comment on column T_SUFFIXARRAY_OCCURENCES.glyph_ids
+is 'IDs of Glyphes';
+
+------------------------------------------------------------------
+-- T_SUFFIXARRAY_OCCURENCES_BBOXES
+------------------------------------------------------------------
+-- TABLE
+CREATE TABLE T_SUFFIXARRAY_OCCURENCES_BBOXES (
+	id          integer not null,
+	id_occ      integer not null,
+	bbox_x      double precision not null,
+	bbox_y      double precision not null,
+	bbox_height double precision not null,
+	bbox_width  double precision not null,
+	constraint  T_SUFFIXARRAY_OCCURENCES_BBOXES_PK primary key (id),
+	constraint  T_SUFFIXARRAY_OCCURENCES_BBOXES_FK foreign key (id_occ) references T_SUFFIXARRAY_OCCURENCES(id) on delete cascade
+);
+
+-- SEQUENCE
+CREATE SEQUENCE T_SUFFIXARRAY_OCCURENCES_BBOXES_SEQ
+START WITH 1
+INCREMENT BY 1;
+-- TRIGGER FUNCTION
+CREATE OR REPLACE FUNCTION SET_T_SUFFIXARRAY_OCCURENCES_BBOXES_ID()
+RETURNS TRIGGER AS $$
+BEGIN
+	NEW.id := nextval('T_SUFFIXARRAY_OCCURENCES_BBOXES_SEQ');
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+-- TRIGGER
+CREATE OR REPLACE TRIGGER T_SUFFIXARRAY_OCCURENCES_BBOXES_TR
+BEFORE INSERT ON T_SUFFIXARRAY_OCCURENCES_BBOXES
+FOR EACH ROW
+EXECUTE FUNCTION SET_T_SUFFIXARRAY_OCCURENCES_BBOXES_ID();
+-- COMMENTS
+comment on table T_SUFFIXARRAY_OCCURENCES_BBOXES
+is 'stores the bboxes for suffix array occurences (could be multiple because of line break)';
+comment on column T_SUFFIXARRAY_OCCURENCES_BBOXES.id
+is 'Primary Key';
+comment on column T_SUFFIXARRAY_OCCURENCES_BBOXES.id_occ
+is 'Foreign Key to T_SUFFIXARRAY_OCCURENCES';
+comment on column T_SUFFIXARRAY_OCCURENCES_BBOXES.bbox_x
+is 'bounding box x coordinate';
+comment on column T_SUFFIXARRAY_OCCURENCES_BBOXES.bbox_y
+is 'bounding box y coordinate';
+comment on column T_SUFFIXARRAY_OCCURENCES_BBOXES.bbox_height
+is 'bounding box height';
+comment on column T_SUFFIXARRAY_OCCURENCES_BBOXES.bbox_width
+is 'bounding box width';

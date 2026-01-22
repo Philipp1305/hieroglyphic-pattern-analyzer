@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from typing import Sequence
 
-from src.database.tools import insert, select
+from src.database.tools import insert, select, delete
 
 
 def fetch_sorted_gardiner_ids(image_id: int) -> list[tuple[int, int]]:
@@ -230,6 +230,12 @@ def run_ngram(
     occurrences = filter_closed_patterns(occurrences)
 
     if occurrences:
+        # Delete existing patterns for this image to avoid duplicates
+        delete(
+            "DELETE FROM T_NGRAM_PATTERN WHERE id_image = %s",
+            (image_id,)
+        )
+        
         persist_patterns(image_id, occurrences, glyph_ids)
         store_occurrence_bboxes(image_id)
 

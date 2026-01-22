@@ -4,18 +4,19 @@ from base64 import b64encode
 from dataclasses import dataclass
 from typing import Optional
 
-from src.database.select import run_select
+from src.database.tools import select
 
 
 @dataclass(frozen=True)
-class PapyrusSummary:
-    """Lightweight representation of a papyrus card."""
+class CollectionItem:
+    """Lightweight representation of an entry in the collection."""
 
     id: int
     title: str
     image_src: str
     status_label: str
     status_variant: str
+    status_code: str
 
 
 STATUS_VARIANT_MAP = {
@@ -36,10 +37,8 @@ DEFAULT_STATUS_VARIANT = "info"
 DEFAULT_MIMETYPE = "image/png"
 
 
-def fetch_papyri_summaries(limit: Optional[int] = None) -> list[PapyrusSummary]:
-    """
-    Load papyri with their status labels and ready-to-use <img> sources.
-    """
+def fetch_collection_items(limit: Optional[int] = None) -> list[CollectionItem]:
+    """Load collection items with their status labels and ready-to-use <img> sources."""
 
     sql = """
         SELECT
@@ -47,8 +46,9 @@ def fetch_papyri_summaries(limit: Optional[int] = None) -> list[PapyrusSummary]:
             i.title,
             i.file_name,
             i.mimetype,
-            i.img,
-            s.status AS status_label
+            i.img_preview,
+            s.status AS status_label,
+            s.status_code
         FROM t_images AS i
         LEFT JOIN t_images_status AS s ON s.id = i.id_status
         ORDER BY i.id DESC
@@ -58,29 +58,35 @@ def fetch_papyri_summaries(limit: Optional[int] = None) -> list[PapyrusSummary]:
         sql += " LIMIT %s"
         params = (limit,)
 
-    results = run_select(sql, params)
-    papyri: list[PapyrusSummary] = []
+    results = select(sql, params)
+    collection: list[CollectionItem] = []
 
     for row in results:
         (
-            papyrus_id,
+            item_id,
             title,
             file_name,
             mimetype,
             img_blob,
             status_label,
+            status_code,
         ) = row
-        papyri.append(
-            PapyrusSummary(
-                id=papyrus_id,
-                title=((title or file_name or "")).strip(),
+        normalized_code = (status_code or "").strip().upper()
+        status_variant = _resolve_status_variant(status_label)
+        if normalized_code == "SORT_VALIDATE":
+            status_variant = "warning"
+        collection.append(
+            CollectionItem(
+                id=item_id,
+                title=(title or file_name or "").strip(),
                 image_src=_build_image_src(img_blob, mimetype),
                 status_label=status_label or "",
-                status_variant=_resolve_status_variant(status_label),
+                status_variant=status_variant,
+                status_code=normalized_code,
             )
         )
 
-    return papyri
+    return collection
 
 
 def _build_image_src(img_blob: Optional[bytes], mimetype: Optional[str]) -> str:

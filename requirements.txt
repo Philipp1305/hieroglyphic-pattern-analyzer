@@ -6,5 +6,7 @@ pandas
 Flask
 Flask-SocketIO
 types-Flask-SocketIO
-pysuffixarray
+suffix-trees
 types-psycopg2
+ruff
+Pillow

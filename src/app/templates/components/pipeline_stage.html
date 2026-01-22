@@ -1,0 +1,104 @@
+{% macro stage_done(title, subtitle="") -%}
+<div class="flex flex-1 items-center justify-between px-5 py-4">
+  <div class="flex items-center gap-4">
+    <div
+      class="flex size-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
+    >
+      <span class="material-symbols-outlined text-base">check_circle</span>
+    </div>
+    <div class="flex flex-col">
+      <span class="text-sm font-semibold text-text-light dark:text-text-dark"
+        >{{ title }}</span
+      >
+      {% if subtitle %}
+      <span
+        class="text-xs text-text-secondary-light dark:text-text-secondary-dark"
+        >{{ subtitle }}</span
+      >
+      {% endif %}
+    </div>
+  </div>
+  <span
+    class="text-xs font-semibold uppercase text-text-secondary-light dark:text-text-secondary-dark"
+    >Done</span
+  >
+</div>
+{%- endmacro %} {% macro stage_running(title, subtitle="Running") -%}
+<div
+  class="flex flex-1 items-center justify-between px-5 py-4 bg-primary/5 dark:bg-primary/15"
+>
+  <div class="flex items-center gap-4">
+    <div
+      class="flex size-9 items-center justify-center rounded-full text-primary"
+    >
+      <span class="material-symbols-outlined animate-spin text-xl"
+        >progress_activity</span
+      >
+    </div>
+    <div class="flex flex-col">
+      <span class="text-sm font-semibold text-text-light dark:text-text-dark"
+        >{{ title }}</span
+      >
+      {% if subtitle %}
+      <span class="text-xs text-primary">{{ subtitle }}</span>
+      {% endif %}
+    </div>
+  </div>
+  <span
+    class="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase text-primary"
+    >Running</span
+  >
+</div>
+{%- endmacro %} {% macro stage_pending(title, subtitle="Pending user action")
+-%}
+<div
+  class="flex flex-1 items-center justify-between px-5 py-4 bg-amber-50 dark:bg-amber-500/10"
+>
+  <div class="flex items-center gap-4">
+    <div
+      class="flex size-9 items-center justify-center rounded-full text-amber-600 dark:text-amber-300"
+    >
+      <span class="material-symbols-outlined text-xl">hourglass_bottom</span>
+    </div>
+    <div class="flex flex-col">
+      <span class="text-sm font-semibold text-text-light dark:text-text-dark"
+        >{{ title }}</span
+      >
+      {% if subtitle %}
+      <span class="text-xs text-amber-600 dark:text-amber-200"
+        >{{ subtitle }}</span
+      >
+      {% endif %}
+    </div>
+  </div>
+  <span
+    class="rounded-full bg-amber-200/70 dark:bg-amber-500/30 px-3 py-1 text-[10px] font-semibold uppercase text-amber-700 dark:text-amber-100"
+    >Pending</span
+  >
+</div>
+{%- endmacro %} {% macro stage_waiting(title, subtitle="Waiting") -%}
+<div class="flex flex-1 items-center justify-between px-5 py-4 opacity-80">
+  <div class="flex items-center gap-4">
+    <div
+      class="flex size-9 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300"
+    >
+      <span class="material-symbols-outlined text-base">schedule</span>
+    </div>
+    <div class="flex flex-col">
+      <span class="text-sm font-semibold text-text-light dark:text-text-dark"
+        >{{ title }}</span
+      >
+      {% if subtitle %}
+      <span
+        class="text-xs text-text-secondary-light dark:text-text-secondary-dark"
+        >{{ subtitle }}</span
+      >
+      {% endif %}
+    </div>
+  </div>
+  <span
+    class="text-xs font-semibold uppercase text-text-secondary-light dark:text-text-secondary-dark"
+    >Waiting</span
+  >
+</div>
+{%- endmacro %}

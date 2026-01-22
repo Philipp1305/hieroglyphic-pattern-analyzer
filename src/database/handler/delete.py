@@ -1,30 +1,32 @@
 from typing import Any, Sequence
 from src.database.connect import connect
 
-def run_update(query: str, params: Sequence[Any] | None = None) -> int:
+
+def run_delete(query: str, params: Sequence[Any] | None = None) -> int:
     """
-    Execute an UPDATE statement and return the number of affected rows.
+    Execute a DELETE statement and return the number of affected rows.
 
     Parameters
     ----------
     query:
-        SQL UPDATE statement. Use placeholders (%s) for parameters.
+        SQL DELETE statement. Use placeholders (%s) for parameters.
     params:
         Optional values that will be bound to the placeholders in `query`.
     """
-    if not query.strip().lower().startswith("update"):
-        raise ValueError("Only UPDATE statements are allowed.")
+    if not query.strip().lower().startswith("delete"):
+        raise ValueError("Only DELETE statements are allowed.")
 
     conn = connect()
     try:
         with conn.cursor() as cur:
             cur.execute(query, params)
             affected = cur.rowcount
+
         conn.commit()
+        return affected
+
     except Exception:
         conn.rollback()
         raise
     finally:
         conn.close()
-
-    return affected

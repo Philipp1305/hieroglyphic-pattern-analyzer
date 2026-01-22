@@ -1,8 +1,16 @@
 .archeo/
-*__pycache__*
+__pycache__/
 .DS_Store
 .env
 .venv
 .mypy_cache
 .history
 .ruff_cache
+
+# Python build artifacts
+build/
+dist/
+*.egg-info/
+
+# Generated output files from analysis scripts
+columns_viz_*.png

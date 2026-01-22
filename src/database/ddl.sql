@@ -193,3 +193,31 @@ create or replace trigger T_IMAGES_STATUS_TR
 before insert on T_IMAGES_STATUS
 for each row
 execute function SET_T_IMAGES_STATUS_ID();
+
+
+-- T_SUFFIX_PATTERN
+------------------------------------------------------------------
+
+-- TABLE
+create table t_suffix_pattern (
+    id integer primary key,
+    id_image integer not null references t_images(id) on delete cascade,
+    gardiner_ids integer[] not null,
+    length integer not null,
+	-- wird länge benötigt?
+);
+
+-- COMMENTS
+comment on table t_suffix_pattern
+is 'stores the found suffix tree patterns (lcp)';
+comment on column t_suffix_pattern.id
+is 'Primary Key';
+comment on column t_suffix_pattern.id_image
+is 'Foreign Key to t_images';
+comment on column t_suffix_pattern.gardiner_ids
+is 'IDs of Gardiner Codes';
+comment on column t_suffix_pattern.length
+is 'length of pattern';
+
+-- INDEX
+create unique index t_suffix_pattern_pk on t_suffix_pattern(id int4_ops);

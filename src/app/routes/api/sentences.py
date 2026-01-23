@@ -10,7 +10,7 @@ from . import bp
 @bp.post("/sentences/lookup")
 def lookup_sentences():
     """Look up TLA sentences matching a pattern of Gardiner codes.
-    
+
     This endpoint receives a pattern of Gardiner codes (e.g., ["F20", "O1", "Z1"])
     from the frontend and searches the TLA sentence database for matches.
     """

@@ -45,7 +45,9 @@ def get_image_ngrams(image_id: int):
                 _normalize_unicode(gardiner_map.get(gid, {}).get("unicode", ""))
                 for gid in ids
             ]
-            symbol_values = [_unicode_to_symbol([u]) if u else "" for u in unicode_values]
+            symbol_values = [
+                _unicode_to_symbol([u]) if u else "" for u in unicode_values
+            ]
             gardiner_codes = [
                 _normalize_gardiner_code(gardiner_map.get(gid, {}).get("code", ""))
                 for gid in ids

@@ -10,13 +10,13 @@ using a sliding window approach to find partial matches in the corpus.
 """
 
 import re
-from typing import Optional
 
 from src.database.tools import select
 
+
 def _get_codes(mdc: str) -> list[str]:
     """Return a list of individual codes from an MDC string.
-    
+
     Extracts Gardiner codes and normalizes them to standard format:
     - First letter(s): Capital first, lowercase second (Aa not AA)
     - Examples: A1, Aa1, D21, G43
@@ -34,18 +34,20 @@ def _get_codes(mdc: str) -> list[str]:
             normalized.append(code)
     return normalized
 
+
 def _normalize(mdc: str) -> str:
     """Flatten MDC into a dash-separated string for searching."""
     return "-".join(_get_codes(mdc))
 
+
 def _normalize_pattern(pattern: list[str]) -> list[str]:
     """Normalize Gardiner codes to match TLA database format.
-    
+
     Converts codes like AA1, AA11 to Aa1, Aa11 (capital first, lowercase second).
-    
+
     Args:
         pattern: List of Gardiner codes (may have inconsistent casing)
-        
+
     Returns:
         List of normalized Gardiner codes
     """
@@ -58,29 +60,33 @@ def _normalize_pattern(pattern: list[str]) -> list[str]:
             normalized.append(code)
     return normalized
 
-def lookup_all(pattern: list[str], min_subpattern_len: int = 5) -> list[dict]:
+
+def lookup_all(
+    pattern: list[str],
+    min_subpattern_len: int = 5,
+    include_partials: bool = True,
+) -> list[dict]:
     """Look up sentences matching a pattern.
-    
+
     For long patterns (>15 codes), also searches for sub-patterns of length min_subpattern_len.
     This helps find partial matches in the corpus.
-    
+
     Args:
         pattern: List of Gardiner codes to search for
         min_subpattern_len: Minimum length of sub-patterns to search (default: 5)
     """
     # Normalize input pattern to match TLA format (AA1 -> Aa1, etc.)
     pattern = _normalize_pattern(pattern)
-    
-    # Join pattern into searchable string format (e.g., "F20-O1-Z1")
-    target = "-".join(pattern)
+
     target_len = len(pattern)
-    
+
     # For long patterns, also search for sub-patterns
     # This helps find partial matches when the full sequence is too specific
-    search_patterns = [(pattern, target_len, "full")]
-    
-    # Adaptive sub-pattern length based on total pattern length
-    if target_len >= 10:
+    search_patterns: list[tuple[list[str], int, str, int]] = [
+        (pattern, target_len, "full", 0)
+    ]  # (subpattern, length, type, start_in_original)
+
+    if include_partials and target_len >= 10:
         # Determine sub-pattern length based on pattern size
         if target_len >= 30:
             subpattern_len = 7  # Very long patterns: use 7-code chunks
@@ -90,56 +96,62 @@ def lookup_all(pattern: list[str], min_subpattern_len: int = 5) -> list[dict]:
             subpattern_len = 5  # Medium patterns: use 5-code chunks
         else:
             subpattern_len = 4  # Shorter patterns (10-14): use 4-code chunks
-        
+
         # Override with minimum if specified
         subpattern_len = max(min_subpattern_len, subpattern_len)
-        
+
         # Generate sliding window sub-patterns, overlapping by half
         step = max(2, subpattern_len // 2)  # Step by half the window size
         for i in range(0, target_len - subpattern_len + 1, step):
-            sub = pattern[i:i + subpattern_len]
+            sub = pattern[i : i + subpattern_len]
             if len(sub) >= subpattern_len:
-                search_patterns.append((sub, len(sub), "partial"))
-    
+                search_patterns.append((sub, len(sub), "partial", i))
+
     # Fetch all sentences from the TLA database
     # tokens field contains JSONB array with linguistic information for each word
     rows = select("""
         SELECT id, mdc_compact, transcription, translation, tokens
         FROM T_SENTENCES
     """)
-    
+
     # Track which sentences matched and with which patterns
-    sentence_matches = {}  # sent_id -> {pattern_info, match_count, tokens}
-    
-    for pat, pat_len, match_type in search_patterns:
+    sentence_matches: dict[
+        int, dict
+    ] = {}  # sent_id -> {pattern_info, match_count, tokens}
+
+    for pat, pat_len, match_type, pat_start in search_patterns:
         pat_str = "-".join(pat)
-        
+
         for r in rows:
             sent_id, mdc_compact, transcription, translation, tokens = r
-            if not tokens: 
+            if not tokens:
                 tokens = []
-                
+
             normalized_mdc = _normalize(mdc_compact)
-            
+
             # 1. Check if pattern exists in the sentence
             if pat_str not in normalized_mdc:
                 continue
-            
+
             occurrence_count = normalized_mdc.count(pat_str)
-            
+
             # If we've already matched this sentence, add to its count
             if sent_id in sentence_matches:
                 sentence_matches[sent_id]["match_occurrence_count"] += occurrence_count
-                sentence_matches[sent_id]["matched_patterns"].append({
-                    "pattern": pat,
-                    "type": match_type,
-                    "count": occurrence_count
-                })
+                sentence_matches[sent_id]["matched_patterns"].append(
+                    {
+                        "pattern": pat,
+                        "type": match_type,
+                        "count": occurrence_count,
+                        "pattern_start": pat_start,
+                        "pattern_end": pat_start + pat_len,
+                    }
+                )
                 continue
-            
+
             # 2. Map global code indices to specific tokens
             code_map = []  # list of (token_index, token_data) for every code in the sentence
-            
+
             for t_idx, token in enumerate(tokens):
                 t_mdc = token.get("mdc", "")
                 t_codes = _get_codes(t_mdc)
@@ -148,68 +160,66 @@ def lookup_all(pattern: list[str], min_subpattern_len: int = 5) -> list[dict]:
 
             # 3. Find the pattern matches in the list of codes
             all_codes = _get_codes(mdc_compact)
-            
+
             # Find all start indices of the pattern
             match_indices = []
             for i in range(len(all_codes) - pat_len + 1):
                 if all_codes[i : i + pat_len] == pat:
                     match_indices.append(i)
 
-            # 4. Extract the unique tokens involved in these matches
-            matching_tokens = []
-            seen_token_indices = set()
-            lemma_ids_to_fetch = set()
+            # 4. Collect frequencies for ALL tokens in the sentence
+            lemma_ids_to_fetch: set[str] = {
+                str(t.get("lemma_id"))
+                for t in tokens
+                if isinstance(t, dict) and t.get("lemma_id") is not None
+            }
 
-            for start_idx in match_indices:
-                for i in range(pat_len):
-                    code_idx = start_idx + i
-                    if code_idx < len(code_map):
-                        t_idx, token = code_map[code_idx]
-                        if t_idx not in seen_token_indices:
-                            matching_tokens.append(token)
-                            seen_token_indices.add(t_idx)
-                            if token.get("lemma_id"):
-                                lemma_ids_to_fetch.add(token["lemma_id"])
-
-            # 5. Bulk fetch frequencies
             frequencies = _count_corpus_occurrences(lemma_ids_to_fetch)
-            
-            for token in matching_tokens:
+
+            for token in tokens:
                 lid = token.get("lemma_id", "")
                 token["corpus_frequency"] = frequencies.get(lid, 0)
-            
+
             sentence_matches[sent_id] = {
                 "id": sent_id,
                 "mdc_compact": mdc_compact,
                 "transcription": transcription,
                 "translation": translation,
-                "matching_tokens": matching_tokens, 
+                # Return ALL tokens so frontend can display the full sentence tokens
+                "matching_tokens": tokens,
                 "match_occurrence_count": occurrence_count,
-                "matched_patterns": [{
-                    "pattern": pat,
-                    "type": match_type,
-                    "count": occurrence_count
-                }]
+                "matched_patterns": [
+                    {
+                        "pattern": pat,
+                        "type": match_type,
+                        "count": occurrence_count,
+                        "pattern_start": pat_start,
+                        "pattern_end": pat_start + pat_len,
+                    }
+                ],
             }
 
     # Convert to list and sort by number of matches (descending), then by ID
     results = list(sentence_matches.values())
-    results.sort(key=lambda x: (-x['match_occurrence_count'], x['id']))
+    results.sort(key=lambda x: (-x["match_occurrence_count"], x["id"]))
     return results
 
 
 def _count_corpus_occurrences(target_ids: set[str]) -> dict[str, int]:
     if not target_ids:
         return {}
-    
-    rows = select("""
+
+    rows = select(
+        """
         SELECT token->>'lemma_id', COUNT(*)
         FROM T_SENTENCES,
         jsonb_array_elements(tokens) as token
         WHERE token->>'lemma_id' IN %s
         GROUP BY token->>'lemma_id'
-    """, (tuple(target_ids),))
-    
+    """,
+        (tuple(target_ids),),
+    )
+
     return {row[0]: row[1] for row in rows}
 
 
@@ -217,22 +227,24 @@ if __name__ == "__main__":
     # Test multiple patterns
     test_patterns = [
         ["D21", "Aa1", "Y1", "V31"],  # Short pattern
-        ["N35", "X1", "Q1", "D4", "A40"],  # Medium pattern 
+        ["N35", "X1", "Q1", "D4", "A40"],  # Medium pattern
     ]
-    
+
     for test_pattern in test_patterns:
         pattern_str = "-".join(test_pattern)
-        
-        print(f"\n{'='*70}")
+
+        print(f"\n{'=' * 70}")
         print(f"Searching for pattern (n={len(test_pattern)}): {pattern_str[:50]}...")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
         results = lookup_all(test_pattern)
         print(f"Found {len(results)} matching sentences.")
-        
+
         if results:
             limit = 5
-            print(f"Showing top {limit} 'most likely' matches (sorted by occurrence count):")
-            
+            print(
+                f"Showing top {limit} 'most likely' matches (sorted by occurrence count):"
+            )
+
             for i, result in enumerate(results[:limit], 1):
                 print("\n" + "=" * 60)
                 print(f"MATCH {i} (Count: {result['match_occurrence_count']})")
@@ -241,19 +253,21 @@ if __name__ == "__main__":
                 print(f"Transcription: {result['transcription']}")
                 print(f"Translation: {result['translation']}")
                 print("-" * 20)
-                print(f"Tokens containing pattern:")
-                
-                for t in result['matching_tokens']:
-                    lemma = t.get('lemma_id', 'N/A')
-                    freq = t.get('corpus_frequency', 0)
-                    mdc = t.get('mdc', '')
-                    pos = t.get('pos', 'N/A')
-                    
-                    # Retrieve transliteration (transcription) and translation
-                    translit = t.get('transcription', '-')
-                    transl = t.get('translation', '-')
+                print("Tokens containing pattern:")
 
-                    print(f"  [POS: {pos:<5}] Lemma: {lemma:<7} | Freq: {freq:<4} | MdC: {mdc}")
+                for t in result["matching_tokens"]:
+                    lemma = t.get("lemma_id", "N/A")
+                    freq = t.get("corpus_frequency", 0)
+                    mdc = t.get("mdc", "")
+                    pos = t.get("pos", "N/A")
+
+                    # Retrieve transliteration (transcription) and translation
+                    translit = t.get("transcription", "-")
+                    transl = t.get("translation", "-")
+
+                    print(
+                        f"  [POS: {pos:<5}] Lemma: {lemma:<7} | Freq: {freq:<4} | MdC: {mdc}"
+                    )
                     print(f"      -> Translit: {translit}")
                     print(f"      -> Transl:   {transl}")
         else:

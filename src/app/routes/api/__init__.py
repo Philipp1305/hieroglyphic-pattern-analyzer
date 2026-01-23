@@ -12,3 +12,4 @@ from . import statuses  # noqa: E402,F401
 from . import sorting  # noqa: E402,F401
 from . import ngrams  # noqa: E402,F401
 from . import sentences  # noqa: E402,F401
+from . import pattern_details  # noqa: E402,F401

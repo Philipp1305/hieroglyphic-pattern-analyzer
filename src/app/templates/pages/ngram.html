@@ -9,13 +9,33 @@
     <div
       class="grid h-full w-full grid-cols-3 items-center px-4 sm:px-6 lg:px-8"
     >
-      <div class="flex justify-start">
+      <div class="flex justify-start gap-2">
         <a
           href="{% if image_id %}{{ url_for('site.overview', id=image_id) }}{% else %}{{ url_for('site.overview') }}{% endif %}"
           class="inline-flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark px-4 py-2 text-sm font-semibold transition-colors hover:border-primary hover:text-primary"
         >
           <span class="material-symbols-outlined text-base">arrow_back</span>
           Back to overview
+        </a>
+        <a
+          href="{{ url_for('site.home') }}"
+          class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border-light dark:border-border-dark text-text-light dark:text-text-dark transition-colors hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          aria-label="Home"
+          title="Home"
+        >
+          <span class="material-symbols-outlined text-xl leading-none"
+            >home</span
+          >
+        </a>
+        <a
+          href="{{ url_for('site.collection') }}"
+          class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border-light dark:border-border-dark text-text-light dark:text-text-dark transition-colors hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          aria-label="Collection"
+          title="Collection"
+        >
+          <span class="material-symbols-outlined text-xl leading-none"
+            >apps</span
+          >
         </a>
       </div>
       <div class="flex items-center justify-center gap-3">
@@ -166,8 +186,8 @@
               data-ngram-view-details
               class="inline-flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark px-3 py-1.5 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark hover:border-primary hover:text-primary transition-colors pointer-events-none opacity-60"
             >
-              <span class="material-symbols-outlined text-sm">launch</span>
-              View pattern details
+              <span class="material-symbols-outlined text-sm">database_search</span>
+              Sentence Lookup (TLA)
             </a>
           </div>
           <div

@@ -223,8 +223,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function normalizePattern(item) {
     const gardinerCodes = Array.isArray(item?.gardiner_codes)
-      ? item.gardiner_codes
-          .map((code) => (code ?? "").toString().trim())
+      ? item.gardiner_codes.map((code) => (code ?? "").toString().trim())
       : [];
     const symbolValues = Array.isArray(item?.symbol_values)
       ? item.symbol_values.map((val) => (val ?? "").toString())
@@ -370,9 +369,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const matchesSearch =
         !term ||
         item.gardinerLabel.toLowerCase().includes(term) ||
-        item.gardinerCodes.some((code) =>
-          code.toLowerCase().includes(term),
-        );
+        item.gardinerCodes.some((code) => code.toLowerCase().includes(term));
       return matchesLength && matchesSearch;
     });
   }

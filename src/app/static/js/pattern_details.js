@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const sentencesList = root.querySelector("[data-pattern-sentences-list]");
   const sentencesEmpty = root.querySelector("[data-pattern-sentences-empty]");
   const loadingOverlay = root.querySelector("[data-pattern-loading]");
+  const infoContainer = root.querySelector("[data-pattern-info]");
 
   const tokensContainer = root.querySelector("[data-pattern-tokens]");
   const tokensEmpty = root.querySelector("[data-pattern-tokens-empty]");
@@ -186,10 +187,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     renderLinks(sentence);
     highlightPatternForSelection();
+    scrollInfoToTop();
   }
 
   function setLoading(show) {
     if (loadingOverlay) loadingOverlay.classList.toggle("hidden", !show);
+  }
+
+  function scrollInfoToTop() {
+    if (!infoContainer) return;
+    infoContainer.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function renderToken(token) {

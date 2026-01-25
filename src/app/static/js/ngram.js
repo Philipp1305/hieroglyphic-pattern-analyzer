@@ -13,13 +13,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const filterContainer = root.querySelector("[data-ngram-filters]");
   const listContainer = root.querySelector("[data-ngram-list]");
-  const listLoading = root.querySelector("[data-ngram-list-loading]");
   const emptyState = root.querySelector("[data-ngram-empty]");
   const searchInput = root.querySelector("[data-ngram-search]");
   const selectedGlyphs = root.querySelector("[data-ngram-selected-glyphs]");
   const selectedCodes = root.querySelector("[data-ngram-selected-unicodes]");
   const selectedCount = root.querySelector("[data-ngram-selected-count]");
   const selectedLength = root.querySelector("[data-ngram-selected-length]");
+  const viewDetailsLink = root.querySelector("[data-ngram-view-details]");
   if (selectedGlyphs) {
     selectedGlyphs.style.fontFamily =
       "'Noto Sans Egyptian Hieroglyphs','Segoe UI Historic','Segoe UI Symbol','Noto Sans',sans-serif";
@@ -59,13 +59,17 @@ document.addEventListener("DOMContentLoaded", () => {
     isPanning: false,
     panStart: null,
   };
+  let imageReady = false;
+  let patternsReady = false;
+  let hasErrorOverlay = false;
 
   const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
   const showOverlay = (message, { showSpinner = true } = {}) => {
-    if (loadingOverlay) {
-      loadingOverlay.classList.remove("hidden");
+    if (!loadingOverlay) {
+      return;
     }
+    loadingOverlay.classList.remove("hidden");
     if (loadingText && message) {
       loadingText.textContent = message;
     }
@@ -75,19 +79,19 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const hideOverlay = () => {
-    if (loadingOverlay) {
-      loadingOverlay.classList.add("hidden");
+    if (!loadingOverlay) {
+      return;
     }
+    loadingOverlay.classList.add("hidden");
     if (loadingSpinner) {
       loadingSpinner.classList.add("hidden");
     }
   };
 
-  const setListLoading = (loading) => {
-    if (!listLoading) {
-      return;
+  const markReadyAndMaybeHide = () => {
+    if (!hasErrorOverlay && imageReady && patternsReady) {
+      hideOverlay();
     }
-    listLoading.classList.toggle("hidden", !loading);
   };
 
   const setEmptyMessage = (message) => {
@@ -108,7 +112,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   showOverlay(" Loading workspace…");
-  setListLoading(true);
 
   loadImage(imageId);
   loadNgrams(imageId);
@@ -121,6 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function loadImage(id) {
+    imageReady = false;
     const apiUrl = `/api/images/${encodeURIComponent(id)}/full?_=${Date.now()}`;
     fetch(apiUrl, { cache: "no-store" })
       .then((response) => {
@@ -140,7 +144,10 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .catch((error) => {
         console.error("[ngram] load image error", error);
+        hasErrorOverlay = true;
         showOverlay("Image could not be loaded", { showSpinner: false });
+        imageReady = true;
+        markReadyAndMaybeHide();
       });
   }
 
@@ -153,17 +160,22 @@ document.addEventListener("DOMContentLoaded", () => {
         height: img.naturalHeight || img.height || 0,
       };
       state.baseImage = img;
-      hideOverlay();
+      imageReady = true;
+      markReadyAndMaybeHide();
       renderBoundingBoxes();
     };
     img.onerror = () => {
       console.error("[ngram] failed to load image");
+      hasErrorOverlay = true;
       showOverlay("Image could not be loaded", { showSpinner: false });
+      imageReady = true;
+      markReadyAndMaybeHide();
     };
     img.src = src;
   }
 
   function loadNgrams(id) {
+    patternsReady = false;
     const apiUrl = `/api/images/${encodeURIComponent(id)}/ngrams?_=${Date.now()}`;
     setEmptyMessage("");
 
@@ -190,6 +202,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         renderFilters();
         renderList();
+        patternsReady = true;
+        markReadyAndMaybeHide();
       })
       .catch((error) => {
         console.error("[ngram] load ngrams error", error);
@@ -198,16 +212,18 @@ document.addEventListener("DOMContentLoaded", () => {
         renderFilters();
         renderList();
         setEmptyMessage("Failed to load N-grams.");
+        hasErrorOverlay = true;
+        showOverlay("N-grams could not be loaded", { showSpinner: false });
+        patternsReady = true;
       })
       .finally(() => {
-        setListLoading(false);
+        markReadyAndMaybeHide();
       });
   }
 
   function normalizePattern(item) {
     const gardinerCodes = Array.isArray(item?.gardiner_codes)
-      ? item.gardiner_codes
-          .map((code) => (code ?? "").toString().trim())
+      ? item.gardiner_codes.map((code) => (code ?? "").toString().trim())
       : [];
     const symbolValues = Array.isArray(item?.symbol_values)
       ? item.symbol_values.map((val) => (val ?? "").toString())
@@ -353,9 +369,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const matchesSearch =
         !term ||
         item.gardinerLabel.toLowerCase().includes(term) ||
-        item.gardinerCodes.some((code) =>
-          code.toLowerCase().includes(term),
-        );
+        item.gardinerCodes.some((code) => code.toLowerCase().includes(term));
       return matchesLength && matchesSearch;
     });
   }
@@ -437,6 +451,7 @@ document.addEventListener("DOMContentLoaded", () => {
       selectedCount.textContent = "Occurrences: —";
       selectedLength.textContent = "n = —";
       renderBoundingBoxes();
+      updateDetailsLink(null);
       return;
     }
 
@@ -465,6 +480,23 @@ document.addEventListener("DOMContentLoaded", () => {
     selectedLength.textContent = `n = ${selection.length || "—"}`;
 
     renderBoundingBoxes();
+    updateDetailsLink(selection);
+  }
+
+  function updateDetailsLink(selection) {
+    if (!viewDetailsLink) return;
+    if (!selection || !selection.id) {
+      viewDetailsLink.href = "#";
+      viewDetailsLink.setAttribute("aria-disabled", "true");
+      viewDetailsLink.classList.add("pointer-events-none", "opacity-60");
+      return;
+    }
+    const params = new URLSearchParams();
+    if (imageId) params.set("id", imageId);
+    params.set("pattern_id", selection.id);
+    viewDetailsLink.href = `/pattern-details?${params.toString()}`;
+    viewDetailsLink.setAttribute("aria-disabled", "false");
+    viewDetailsLink.classList.remove("pointer-events-none", "opacity-60");
   }
 
   function setGlyphContent(element, options = {}) {

@@ -1,20 +1,82 @@
 import argparse
 import sys
 from pathlib import Path
+from collections import Counter
+from typing import Sequence
 
-import pandas as pd
+import psycopg2.extras
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
-DATA_PATH = BASE_DIR / "data" / "sorted_glyphes.csv"
+import pandas as pd
+from src.database.connect import connect
+from src.database.tools import insert, select, delete
 
 # Runs in O(nlogn)
 
+def fetch_sorted_gardiner_ids(image_id: int) -> list[tuple[int, int]]:
+    rows = select(
+        """
+        SELECT gs.v_column, gs.v_row, gr.id_gardiner, gr.id
+        FROM T_GLYPHES_SORTED AS gs
+        JOIN T_GLYPHES_RAW AS gr ON gr.id = gs.id_glyph
+        WHERE gr.id_image = %s
+        ORDER BY gs.v_column, gs.v_row
+        """,
+        (image_id,),
+    )
 
-def load_sequence() -> list[int]:
-    df = pd.read_csv(DATA_PATH)
-    return df["gardiner_code"].astype(int).tolist()  # Convert to list of integers
+    sequence: list[tuple[int, int]] = []
+    for _col, _row, gardiner_id, glyph_id in rows:
+        if gardiner_id is None:
+            continue
+        sequence.append((int(gardiner_id), int(glyph_id)))
+
+    return sequence
+
+def find_suffixarray_occurrences(
+    gardiner_ids: list[int],
+    *,
+    min_length: int,
+) -> dict[tuple[int, ...], list[int]]:
+    """
+    Find all repeated substrings and their start positions using suffix array.
+    Similar to find_ngram_occurrences but uses suffix array approach.
+    
+    Returns dict mapping pattern -> list of start positions.
+    """
+    occurrences: dict[tuple[int, ...], list[int]] = {}
+    
+    if len(gardiner_ids) < min_length:
+        return occurrences
+    
+    suffixes = build_suffixes(gardiner_ids)
+    
+    # For each pair of consecutive suffixes, find LCP and track positions
+    for i in range(len(suffixes) - 1):
+        s1, pos1 = suffixes[i]
+        s2, pos2 = suffixes[i + 1]
+        lcp_len = lcp_length(s1, s2)
+        
+        # Extract all prefixes of the LCP that meet min_length
+        for prefix_len in range(min_length, lcp_len + 1):
+            pattern = tuple(s1[:prefix_len])
+            
+            # Add both positions
+            if pattern not in occurrences:
+                occurrences[pattern] = []
+            if pos1 not in occurrences[pattern]:
+                occurrences[pattern].append(pos1)
+            if pos2 not in occurrences[pattern]:
+                occurrences[pattern].append(pos2)
+    
+    # Sort positions for each pattern
+    for pattern in occurrences:
+        occurrences[pattern].sort()
+    
+    return occurrences
+
 
 
 def build_suffixes(seq: list[int]) -> list[tuple[list[int], int]]:
@@ -120,48 +182,254 @@ def search_pattern(suffixes: list[tuple[list[int], int]], pattern: list[int]) ->
     return last - first + 1
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Find repeated glyph sequences with the longest common prefixes."
-    )
-    parser.add_argument(
-        "--min-length", type=int, default=1, help="Minimum LCP length to report."
-    )
-    parser.add_argument(
-        "--limit", type=int, default=15, help="How many top LCPs to display."
-    )
-    parser.add_argument(
-        "--query",
-        type=str,
-        help="Comma-separated Gardiner codes to search as a pattern",
-    )
-    args = parser.parse_args()
+def find_all_repeated_substrings(seq: list[int], min_length: int = 1) -> list[tuple[int, tuple[int, ...], int]]:
+    """
+    Find ALL repeated substrings (not just LCPs).
+    Returns list of (length, substring, occurrence_count) tuples sorted by occurrence desc, length desc.
+    """
+    suffixes = build_suffixes(seq)
+    
+    # Collect all repeated prefixes between consecutive suffixes
+    all_repeated: dict[tuple[int, ...], int] = {}
+    
+    for i in range(len(suffixes) - 1):
+        s1, _ = suffixes[i]
+        s2, _ = suffixes[i + 1]
+        length = lcp_length(s1, s2)
+        
+        # For this LCP, collect ALL possible prefixes (length min_length, ..., lcp_length)
+        for prefix_len in range(min_length, length + 1):
+            prefix = tuple(s1[:prefix_len])
+            all_repeated[prefix] = all_repeated.get(prefix, 1) + 1
+    
+    # Convert to list and sort by occurrence count (desc), then by length (desc)
+    result = [(len(prefix), prefix, count) for prefix, count in all_repeated.items()]
+    result.sort(key=lambda x: (-x[2], -x[0]))
+    
+    return result
 
-    seq = load_sequence()
-    lcps = find_lcps(seq, min_length=args.min_length)
 
-    if not lcps:
-        print("No repeated sequences found with the given minimum length.")
+def persist_suffixarray_patterns(
+    image_id: int,
+    occurrences: dict[tuple[int, ...], list[int]],
+    glyph_ids: Sequence[int],
+) -> None:
+    
+
+    patterns = [(pattern, starts) for pattern, starts in occurrences.items() if len(starts) > 1]
+    if not patterns:
         return
 
-    top_lcps = lcps[: args.limit]
-    print(f"Top {len(top_lcps)} repeated sequences (length >= {args.min_length}):")
-    for length, prefix in top_lcps:
-        print(f"length {length}: {list(prefix)}")
+    conn = connect()
+    try:
+        cur = conn.cursor()
 
-    if args.query:
-        try:
-            pattern = [int(x.strip()) for x in args.query.split(",") if x.strip()]
-        except ValueError:
-            print(
-                "Invalid --query pattern. Use comma-separated integers, e.g. '1,2,3'."
+        pattern_rows = [
+            (image_id, list(pattern), len(pattern), len(starts))
+            for pattern, starts in patterns
+        ]
+
+        psycopg2.extras.execute_values(
+            cur,
+            """
+            INSERT INTO T_SUFFIXARRAY_PATTERNS (id_image, gardiner_ids, sequence_length, sequence_count)
+            VALUES %s
+            RETURNING id
+            """,
+            pattern_rows,
+            page_size=100,
+        )
+        pattern_ids = [row[0] for row in cur.fetchall()]
+
+        occurrence_rows: list[tuple[int, list[int]]] = []
+        for (pattern, starts), pattern_id in zip(patterns, pattern_ids):
+            pat_len = len(pattern)
+            for start in starts:
+                occurrence_rows.append((pattern_id, list(glyph_ids[start : start + pat_len])))
+
+        if occurrence_rows:
+            psycopg2.extras.execute_values(
+                cur,
+                """
+                INSERT INTO T_SUFFIXARRAY_OCCURENCES (id_pattern, glyph_ids)
+                VALUES %s
+                """,
+                occurrence_rows,
+                page_size=500,
             )
-            return
 
-        suffixes = build_suffixes(seq)
-        occ = search_pattern(suffixes, pattern)
-        print(f"\nQuery {pattern} occurrences: {occ}")
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cur.close()
+        conn.close()
+        
+    return None
+
+    
+
+
+def store_occurrence_bboxes(image_id: int) -> None:
+    """
+    Compute and persist bounding boxes for each suffix array occurrence, grouped by column.
+    Multiple boxes can be stored for a single occurrence when it spans several columns.
+    """
+    occ_rows = select(
+        """
+        SELECT occ.id, occ.glyph_ids
+        FROM T_SUFFIXARRAY_OCCURENCES AS occ
+        JOIN T_SUFFIXARRAY_PATTERNS AS pat ON pat.id = occ.id_pattern
+        WHERE pat.id_image = %s
+        """,
+        (image_id,),
+    )
+    if not occ_rows:
+        return
+
+    glyph_rows = select(
+        """
+        SELECT gr.id, gr.bbox_x, gr.bbox_y, gr.bbox_width, gr.bbox_height, gs.v_column
+        FROM T_GLYPHES_RAW AS gr
+        JOIN T_GLYPHES_SORTED AS gs ON gs.id_glyph = gr.id
+        WHERE gr.id_image = %s
+        """,
+        (image_id,),
+    )
+    if not glyph_rows:
+        return
+
+    glyph_map: dict[int, tuple[float, float, float, float, int]] = {
+        int(gid): (float(x), float(y), float(width), float(height), int(col))
+        for gid, x, y, width, height, col in glyph_rows
+    }
+
+    bbox_rows: list[tuple[int, float, float, float, float]] = []
+
+    for occ_id, glyph_ids in occ_rows:
+        if not glyph_ids:
+            continue
+
+        glyphs_by_column: dict[int, list[tuple[float, float, float, float]]] = {}
+        for glyph_id in glyph_ids:
+            glyph_data = glyph_map.get(int(glyph_id))
+            if glyph_data is None:
+                continue
+            x, y, width, height, col = glyph_data
+            glyphs_by_column.setdefault(col, []).append((x, y, width, height))
+
+        for col in sorted(glyphs_by_column):
+            col_glyphs = glyphs_by_column[col]
+            min_x = min(g[0] for g in col_glyphs)
+            min_y = min(g[1] for g in col_glyphs)
+            max_x = max(g[0] + g[2] for g in col_glyphs)
+            max_y = max(g[1] + g[3] for g in col_glyphs)
+            bbox_rows.append((occ_id, min_x, min_y, max_y - min_y, max_x - min_x))
+
+    if bbox_rows:
+        insert(
+            """
+            INSERT INTO T_SUFFIXARRAY_OCCURENCES_BBOXES (id_occ, bbox_x, bbox_y, bbox_height, bbox_width)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            bbox_rows,
+            many=True,
+        )
+
+
+def run_suffixarray(
+    image_id: int,
+    *,
+    min_length: int = 2,
+) -> dict[tuple[int, ...], list[int]]:
+    """
+    Run suffix array analysis on an image, similar to run_ngram workflow.
+    Returns occurrences dict for further processing.
+    """
+    sequence_pairs = fetch_sorted_gardiner_ids(image_id)
+    if not sequence_pairs:
+        return {}
+    
+    gardiner_ids = [gid for gid, _ in sequence_pairs]
+    glyph_ids = [glyph_id for _, glyph_id in sequence_pairs]
+    
+    occurrences = find_suffixarray_occurrences(
+        gardiner_ids,
+        min_length=min_length,
+    )
+
+    if occurrences:
+        # Delete existing patterns for this image to avoid duplicates
+        delete(
+            """
+            DELETE FROM T_SUFFIXARRAY_OCCURENCES
+            WHERE id_pattern IN (
+                SELECT id FROM T_SUFFIXARRAY_PATTERNS WHERE id_image = %s
+            )
+            """,
+            (image_id,),
+        )
+        delete(
+            """
+            DELETE FROM T_SUFFIXARRAY_PATTERNS WHERE id_image = %s
+            """,
+            (image_id,),
+        )
+        delete(
+            """
+            DELETE FROM T_SUFFIXARRAY_OCCURENCES_BBOXES
+            WHERE id_occ IN (
+                SELECT occ.id
+                FROM T_SUFFIXARRAY_OCCURENCES AS occ
+                JOIN T_SUFFIXARRAY_PATTERNS AS pat ON pat.id = occ.id_pattern
+                WHERE pat.id_image = %s
+            )
+            """,
+            (image_id,),
+        )
+
+        persist_suffixarray_patterns(image_id, occurrences, glyph_ids)
+        store_occurrence_bboxes(image_id)
+    
+    return occurrences
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Run suffix array analysis on an image")
+    parser.add_argument("image_id", type=int, help="Image ID to analyze")
+    parser.add_argument("--min-length", type=int, default=2, help="Minimum pattern length")
+    parser.add_argument("--search", type=str, help="Search for a pattern (comma-separated gardiner IDs, e.g. '10,44,5')")
+    
+    args = parser.parse_args()
+    
+    if args.search:
+        # Search mode
+        print(f"Searching for pattern '{args.search}' in image {args.image_id}...")
+        
+        sequence_pairs = fetch_sorted_gardiner_ids(args.image_id)
+        if not sequence_pairs:
+            print("No sequence found for this image")
+        else:
+            gardiner_ids = [gid for gid, _ in sequence_pairs]
+            suffixes = build_suffixes(gardiner_ids)
+            
+            pattern = [int(x.strip()) for x in args.search.split(',')]
+            count = search_pattern(suffixes, pattern)
+            
+            print(f"Pattern {pattern} found {count} times")
+    else:
+        # Analysis mode
+        print(f"Running suffix array analysis on image {args.image_id}...")
+        occurrences = run_suffixarray(args.image_id, min_length=args.min_length)
+        
+        print(f"Found {len(occurrences)} unique patterns")
+        print(f"Total occurrences: {sum(len(starts) for starts in occurrences.values())}")
+
+
+#Für String-Pattern-Suche:
+#.archeo/bin/python src/suffixarray.py 1 --search "10,44,5"
+
+#Für Analyse:
+#.archeo/bin/python src/suffixarray.py 1 --min-length 2
+

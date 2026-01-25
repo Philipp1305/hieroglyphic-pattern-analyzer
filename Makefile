@@ -12,7 +12,7 @@ format-python:
 	ruff format .
 
 format-frontend:
-	$(PRETTIER) --write "src/app/templates/**/*.html" "src/app/static/js/**/*.js"
+	$(PRETTIER) --write "src/app/templates/**/*.html" "!src/app/templates/components/navbar.html" "src/app/static/js/**/*.js"
 lint:
 	ruff check .
 lint-fix:

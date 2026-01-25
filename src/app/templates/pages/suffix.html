@@ -1,0 +1,558 @@
+<div
+  class="flex h-screen flex-col bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark"
+  data-suffix-root
+  data-image-id="{{ image_id or '' }}"
+>
+  <header
+    class="w-full border-b border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark h-16"
+  >
+    <div
+      class="grid h-full w-full grid-cols-3 items-center px-4 sm:px-6 lg:px-8"
+    >
+      <div class="flex justify-start gap-2">
+        <a
+          href="{% if image_id %}{{ url_for('site.overview', id=image_id) }}{% else %}{{ url_for('site.overview') }}{% endif %}"
+          class="inline-flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark px-4 py-2 text-sm font-semibold transition-colors hover:border-primary hover:text-primary"
+        >
+          <span class="material-symbols-outlined text-base">arrow_back</span>
+          Back to overview
+        </a>
+        <a
+          href="{{ url_for('site.home') }}"
+          class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border-light dark:border-border-dark text-text-light dark:text-text-dark transition-colors hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          aria-label="Home"
+          title="Home"
+        >
+          <span class="material-symbols-outlined text-xl leading-none">home</span>
+        </a>
+        <a
+          href="{{ url_for('site.collection') }}"
+          class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border-light dark:border-border-dark text-text-light dark:text-text-dark transition-colors hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          aria-label="Collection"
+          title="Collection"
+        >
+          <span class="material-symbols-outlined text-xl leading-none">apps</span>
+        </a>
+      </div>
+      <div class="flex items-center justify-center gap-3">
+        <div class="size-8"></div>
+        <h2
+          class="text-2xl font-bold text-primary leading-tight tracking-[-0.015em]"
+          style="font-family: &quot;Caesar Dressing&quot;, cursive"
+        >
+          GlyPat
+        </h2>
+      </div>
+      <div class="flex items-center justify-end">
+        <button
+          id="themeToggle"
+          type="button"
+          class="inline-flex items-center justify-center rounded-full border border-border-light dark:border-border-dark p-2 text-text-light dark:text-text-dark transition-colors hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          aria-pressed="false"
+        >
+          <span class="sr-only">Toggle color theme</span>
+          <span
+            class="material-symbols-outlined text-xl leading-none dark:hidden"
+            >dark_mode</span
+          >
+          <span
+            class="material-symbols-outlined hidden text-xl leading-none dark:inline"
+            >light_mode</span
+          >
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main
+    class="flex-1 overflow-hidden min-h-0 p-6 grid grid-cols-12 gap-6 h-[calc(100vh-64px)]"
+  >
+    <!-- Column 1: Pattern list (matches ngram sidebar) -->
+    <aside
+      class="col-span-4 h-full min-h-0 flex flex-col bg-card-light/90 dark:bg-card-dark/80 rounded-xl border border-border-light dark:border-border-dark backdrop-blur"
+    >
+      <div class="p-4 border-b border-slate-200 dark:border-border-dark">
+          <h3 class="font-bold flex items-center gap-2">
+            <span class="material-symbols-outlined text-yellow-500 text-base"
+              >pattern</span
+            >
+            Pattern Analysis
+          </h3>
+        </div>
+      <div class="relative flex-1 min-h-[260px]">
+        <div
+          class="absolute inset-0 hidden items-center justify-center text-sm text-text-secondary-light dark:text-text-secondary-dark px-4 text-center"
+          data-suffix-empty
+        >
+          <p class="p-4">No suffix patterns available yet.</p>
+        </div>
+        <div class="h-full overflow-y-auto p-2 space-y-2" data-suffix-list>
+          <!-- Dummy cards -->
+        <div
+          class="p-3 rounded-lg border border-border-light dark:border-border-dark bg-white/80 dark:bg-gray-900/60 shadow-sm"
+        >
+          <div class="text-xl font-semibold tracking-widest hieroglyph-font">
+            𓀀 𓄿 𓏏
+          </div>
+          <div class="border-t border-border-light dark:border-border-dark my-2"></div>
+          <div class="flex items-center gap-2 text-xs text-text-secondary-light dark:text-text-secondary-dark mt-2">
+            <span class="rounded-full bg-primary/10 text-primary px-2 py-0.5 font-semibold">n = 3</span>
+            <span class="rounded-full bg-border-light dark:bg-border-dark px-2 py-0.5 font-semibold text-text-secondary-light dark:text-text-secondary-dark">Occurrences: 42</span>
+            <span class="flex-1"></span>
+            <a
+              href="#"
+              class="inline-flex items-center gap-1 rounded-full border border-border-light dark:border-border-dark px-3 py-1 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark hover:border-primary hover:text-primary transition"
+            >
+              Analyse
+              <span class="material-symbols-outlined text-sm">open_in_new</span>
+            </a>
+          </div>
+        </div>
+        <div
+          class="p-3 rounded-lg border border-border-light dark:border-border-dark bg-white/80 dark:bg-gray-900/60 shadow-sm"
+        >
+          <div class="text-xl font-semibold tracking-widest hieroglyph-font">
+            𓏠 𓈖 𓏏 𓏛
+          </div>
+          <div class="border-t border-border-light dark:border-border-dark my-2"></div>
+          <div class="flex items-center gap-2 text-xs text-text-secondary-light dark:text-text-secondary-dark mt-2">
+            <span class="rounded-full bg-primary/10 text-primary px-2 py-0.5 font-semibold">n = 4</span>
+            <span class="rounded-full bg-border-light dark:bg-border-dark px-2 py-0.5 font-semibold text-text-secondary-light dark:text-text-secondary-dark">Occurrences: 27</span>
+            <span class="flex-1"></span>
+            <a
+              href="#"
+              class="inline-flex items-center gap-1 rounded-full border border-border-light dark:border-border-dark px-3 py-1 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark hover:border-primary hover:text-primary transition"
+            >
+              Analyse
+              <span class="material-symbols-outlined text-sm">open_in_new</span>
+            </a>
+          </div>
+        </div>
+        <div
+          class="p-3 rounded-lg border border-border-light dark:border-border-dark bg-white/80 dark:bg-gray-900/60 shadow-sm"
+        >
+          <div class="text-xl font-semibold tracking-widest hieroglyph-font">
+            𓇋 𓈖 𓊪 𓅱 𓃣 𓏤
+          </div>
+          <div class="border-t border-border-light dark:border-border-dark my-2"></div>
+          <div class="flex items-center gap-2 text-xs text-text-secondary-light dark:text-text-secondary-dark mt-2">
+            <span class="rounded-full bg-primary/10 text-primary px-2 py-0.5 font-semibold">n = 6</span>
+            <span class="rounded-full bg-border-light dark:bg-border-dark px-2 py-0.5 font-semibold text-text-secondary-light dark:text-text-secondary-dark">Occurrences: 12</span>
+            <span class="flex-1"></span>
+            <a
+              href="#"
+              class="inline-flex items-center gap-1 rounded-full border border-border-light dark:border-border-dark px-3 py-1 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark hover:border-primary hover:text-primary transition"
+            >
+              Analyse
+              <span class="material-symbols-outlined text-sm">open_in_new</span>
+            </a>
+          </div>
+        </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Column 2: Stable sequences + Most prefixes -->
+    <div class="col-span-4 flex flex-col gap-6 h-full min-h-0">
+      <section
+        class="flex-1 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark flex flex-col overflow-hidden"
+      >
+        <div
+          class="p-4 border-b border-slate-200 dark:border-border-dark flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30"
+        >
+          <h3 class="font-bold flex items-center gap-2">
+            <span class="material-symbols-outlined text-blue-500 text-base"
+              >link</span
+            >
+            Stable Sequences
+          </h3>
+        </div>
+        <div class="flex-1 overflow-auto">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-slate-50 dark:bg-slate-900/50 sticky top-0">
+              <tr>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase"
+                >
+                  Sequence
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center"
+                >
+                  Frequency
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase"
+                >
+                  Stability
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center"
+                >
+                  Analyse
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-border-dark">
+              <tr
+                class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              >
+                <td class="px-4 py-3 hieroglyph-font text-2xl">𓏠 𓈖 𓇋 𓇋 𓏏</td>
+                <td class="px-4 py-3 text-sm text-center">124</td>
+                <td class="px-4 py-3">
+                  <div
+                    class="w-full bg-slate-100 dark:bg-slate-900 h-1.5 rounded-full overflow-hidden"
+                  >
+                    <div class="bg-primary h-full w-[98%]"></div>
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 rounded-full border border-border-light dark:border-border-dark px-3 py-1 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark hover:border-primary hover:text-primary transition"
+                  >
+                    <span class="material-symbols-outlined text-sm">search</span>
+                  </button>
+                </td>
+              </tr>
+              <tr
+                class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              >
+                <td class="px-4 py-3 hieroglyph-font text-2xl">𓈖 𓏏 𓏛</td>
+                <td class="px-4 py-3 text-sm text-center">89</td>
+                <td class="px-4 py-3">
+                  <div
+                    class="w-full bg-slate-100 dark:bg-slate-900 h-1.5 rounded-full overflow-hidden"
+                  >
+                    <div class="bg-primary h-full w-[85%]"></div>
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 rounded-full border border-border-light dark:border-border-dark px-3 py-1 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark hover:border-primary hover:text-primary transition"
+                  >
+                    <span class="material-symbols-outlined text-sm">search</span>
+                  </button>
+                </td>
+              </tr>
+              <tr
+                class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              >
+                <td class="px-4 py-3 hieroglyph-font text-2xl">𓁹 𓊪 𓏏 𓇋 𓇋</td>
+                <td class="px-4 py-3 text-sm text-center">62</td>
+                <td class="px-4 py-3">
+                  <div
+                    class="w-full bg-slate-100 dark:bg-slate-900 h-1.5 rounded-full overflow-hidden"
+                  >
+                    <div class="bg-primary h-full w-[78%]"></div>
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 rounded-full border border-border-light dark:border-border-dark px-3 py-1 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark hover:border-primary hover:text-primary transition"
+                  >
+                    <span class="material-symbols-outlined text-sm">search</span>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section
+        class="flex-1 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark flex flex-col overflow-hidden"
+      >
+        <div
+          class="p-4 border-b border-slate-200 dark:border-border-dark bg-slate-50/50 dark:bg-slate-800/30 flex justify-between items-center"
+        >
+          <h3 class="font-bold flex items-center gap-2">
+            <span class="material-symbols-outlined text-green-500 text-base"
+              >first_page</span
+            >
+            Most Prefixes
+          </h3>
+        </div>
+        <div class="flex-1 overflow-auto">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-slate-50 dark:bg-slate-900/50 sticky top-0">
+              <tr>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase"
+                >
+                  Sequence
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center"
+                >
+                  Frequency
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center"
+                >
+                  %
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center"
+                >
+                  Analyse
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-border-dark">
+              <tr
+                class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              >
+                <td class="px-4 py-3 hieroglyph-font text-xl">𓇋 𓈖</td>
+                <td class="px-4 py-3 text-sm text-center">412</td>
+                <td class="px-4 py-3 text-sm text-center">64%</td>
+                <td class="px-4 py-3 text-center">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 rounded-full border border-border-light dark:border-border-dark px-3 py-1 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark hover:border-primary hover:text-primary transition"
+                  >
+                    <span class="material-symbols-outlined text-sm">search</span>
+                  </button>
+                </td>
+              </tr>
+              <tr
+                class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              >
+                <td class="px-4 py-3 hieroglyph-font text-xl">𓂓 𓏤 𓏏</td>
+                <td class="px-4 py-3 text-sm text-center">298</td>
+                <td class="px-4 py-3 text-sm text-center">52%</td>
+                <td class="px-4 py-3 text-center">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 rounded-full border border-border-light dark:border-border-dark px-3 py-1 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark hover:border-primary hover:text-primary transition"
+                  >
+                    <span class="material-symbols-outlined text-sm">search</span>
+                  </button>
+                </td>
+              </tr>
+              <tr
+                class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              >
+                <td class="px-4 py-3 hieroglyph-font text-xl">𓂋 𓏤</td>
+                <td class="px-4 py-3 text-sm text-center">245</td>
+                <td class="px-4 py-3 text-sm text-center">38%</td>
+                <td class="px-4 py-3 text-center">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 rounded-full border border-border-light dark:border-border-dark px-3 py-1 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark hover:border-primary hover:text-primary transition"
+                  >
+                    <span class="material-symbols-outlined text-sm">search</span>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- Column 3: Glyph search + Most suffixes -->
+    <div class="col-span-4 flex flex-col gap-6 h-full min-h-0">
+      <section
+        class="flex-1 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark flex flex-col overflow-hidden"
+      >
+        <div class="p-4 border-b border-slate-200 dark:border-border-dark">
+          <h3 class="font-bold flex items-center gap-2">
+            <span class="material-symbols-outlined text-purple-500 text-base"
+              >search_check</span
+            >
+            Glyph Analysis
+          </h3>
+        </div>
+        <div class="p-4 flex flex-col h-full">
+          <div class="relative mb-4">
+            <input
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-border-dark rounded-lg px-4 py-2 text-sm focus:ring-1 focus:ring-primary focus:border-primary"
+              placeholder="Gardiner Code (e.g. A1)..."
+              type="text"
+            />
+          </div>
+          <div
+            class="flex-1 bg-slate-50 dark:bg-slate-900 rounded-lg p-3 overflow-y-auto border border-slate-100 dark:border-slate-800"
+          >
+            <div class="grid grid-cols-4 gap-2">
+              <div
+                class="aspect-square bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:text-primary group transition-all"
+              >
+                <span class="hieroglyph-font text-2xl">𓀀</span>
+                <span
+                  class="text-[8px] font-mono mt-1 text-slate-400 group-hover:text-primary"
+                  >A1</span
+                >
+              </div>
+              <div
+                class="aspect-square bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:text-primary group transition-all"
+              >
+                <span class="hieroglyph-font text-2xl">𓀁</span>
+                <span
+                  class="text-[8px] font-mono mt-1 text-slate-400 group-hover:text-primary"
+                  >A2</span
+                >
+              </div>
+              <div
+                class="aspect-square bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:text-primary group transition-all"
+              >
+                <span class="hieroglyph-font text-2xl">𓀂</span>
+                <span
+                  class="text-[8px] font-mono mt-1 text-slate-400 group-hover:text-primary"
+                  >A3</span
+                >
+              </div>
+              <div
+                class="aspect-square bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:text-primary group transition-all"
+              >
+                <span class="hieroglyph-font text-2xl">𓀃</span>
+                <span
+                  class="text-[8px] font-mono mt-1 text-slate-400 group-hover:text-primary"
+                  >A4</span
+                >
+              </div>
+              <div
+                class="aspect-square bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:text-primary group transition-all"
+              >
+                <span class="hieroglyph-font text-2xl">𓀄</span>
+                <span
+                  class="text-[8px] font-mono mt-1 text-slate-400 group-hover:text-primary"
+                  >A5</span
+                >
+              </div>
+              <div
+                class="aspect-square bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:text-primary group transition-all"
+              >
+                <span class="hieroglyph-font text-2xl">𓀅</span>
+                <span
+                  class="text-[8px] font-mono mt-1 text-slate-400 group-hover:text-primary"
+                  >A6</span
+                >
+              </div>
+              <div
+                class="aspect-square bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:text-primary group transition-all"
+              >
+                <span class="hieroglyph-font text-2xl">𓀆</span>
+                <span
+                  class="text-[8px] font-mono mt-1 text-slate-400 group-hover:text-primary"
+                  >A7</span
+                >
+              </div>
+              <div
+                class="aspect-square bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:text-primary group transition-all"
+              >
+                <span class="hieroglyph-font text-2xl">𓀇</span>
+                <span
+                  class="text-[8px] font-mono mt-1 text-slate-400 group-hover:text-primary"
+                  >A8</span
+                >
+              </div>
+              <div
+                class="aspect-square bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:text-primary group transition-all"
+              >
+                <span class="hieroglyph-font text-2xl">𓀈</span>
+                <span
+                  class="text-[8px] font-mono mt-1 text-slate-400 group-hover:text-primary"
+                  >A9</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="flex-1 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark flex flex-col overflow-hidden"
+      >
+        <div
+          class="p-4 border-b border-slate-200 dark:border-border-dark bg-slate-50/50 dark:bg-slate-800/30"
+        >
+          <h3 class="font-bold flex items-center gap-2">
+            <span class="material-symbols-outlined text-orange-400 text-base"
+              >last_page</span
+            >
+            Most Suffixes
+          </h3>
+        </div>
+        <div class="flex-1 overflow-y-auto space-y-3">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-slate-50 dark:bg-slate-900/50 sticky top-0">
+              <tr>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase"
+                >
+                  Sequence
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center"
+                >
+                  Frequency
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center"
+                >
+                  %
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center"
+                >
+                  Analyse
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-border-dark">
+              <tr
+                class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              >
+                <td class="px-4 py-3 hieroglyph-font text-xl">𓏛</td>
+                <td class="px-4 py-3 text-sm text-center">512</td>
+                <td class="px-4 py-3 text-sm text-center">71%</td>
+                <td class="px-4 py-3 text-center">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 rounded-full border border-border-light dark:border-border-dark px-3 py-1 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark hover:border-primary hover:text-primary transition"
+                  >
+                    <span class="material-symbols-outlined text-sm">search</span>
+                  </button>
+                </td>
+              </tr>
+              <tr
+                class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              >
+                <td class="px-4 py-3 hieroglyph-font text-xl">𓏏</td>
+                <td class="px-4 py-3 text-sm text-center">388</td>
+                <td class="px-4 py-3 text-sm text-center">54%</td>
+                <td class="px-4 py-3 text-center">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 rounded-full border border-border-light dark:border-border-dark px-3 py-1 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark hover:border-primary hover:text-primary transition"
+                  >
+                    <span class="material-symbols-outlined text-sm">search</span>
+                  </button>
+                </td>
+              </tr>
+              <tr
+                class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              >
+                <td class="px-4 py-3 hieroglyph-font text-xl">𓈖</td>
+                <td class="px-4 py-3 text-sm text-center">314</td>
+                <td class="px-4 py-3 text-sm text-center">42%</td>
+                <td class="px-4 py-3 text-center">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 rounded-full border border-border-light dark:border-border-dark px-3 py-1 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark hover:border-primary hover:text-primary transition"
+                  >
+                    <span class="material-symbols-outlined text-sm">search</span>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>

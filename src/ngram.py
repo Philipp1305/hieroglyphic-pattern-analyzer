@@ -3,7 +3,10 @@ from __future__ import annotations
 from collections import Counter
 from typing import Sequence
 
-from src.database.tools import insert, select, delete
+import psycopg2.extras
+
+from src.database.connect import connect
+from src.database.tools import delete, insert, select
 
 
 def fetch_sorted_gardiner_ids(image_id: int) -> list[tuple[int, int]]:
@@ -107,30 +110,60 @@ def persist_patterns(
     occurrences: dict[tuple[int, ...], list[int]],
     glyph_ids: Sequence[int],
 ) -> None:
-    for ngram, starts in occurrences.items():
-        if len(starts) <= 1:
-            continue
+    
 
-        pattern_id = insert(
+    patterns = [
+        (ngram, starts) for ngram, starts in occurrences.items() if len(starts) > 1
+    ]
+    if not patterns:
+        return None
+
+    conn = connect()
+    try:
+        cur = conn.cursor()
+
+        pattern_rows = [
+            (image_id, list(ngram), len(ngram), len(starts))
+            for ngram, starts in patterns
+        ]
+
+        psycopg2.extras.execute_values(
+            cur,
             """
             INSERT INTO T_NGRAM_PATTERN (id_image, gardiner_ids, length, count)
-            VALUES (%s, %s, %s, %s)
+            VALUES %s
             RETURNING id
             """,
-            (image_id, list(ngram), len(ngram), len(starts)),
+            pattern_rows,
+            page_size=100,
         )
+        pattern_ids = [row[0] for row in cur.fetchall()]
 
-        insert(
-            """
-            INSERT INTO T_NGRAM_OCCURENCES (id_pattern, glyph_ids)
-            VALUES (%s, %s)
-            """,
-            [
-                (pattern_id, list(glyph_ids[start : start + len(ngram)]))
-                for start in starts
-            ],
-            many=True,
-        )
+        occurrence_rows: list[tuple[int, list[int]]] = []
+        for (ngram, starts), pattern_id in zip(patterns, pattern_ids):
+            pat_len = len(ngram)
+            for start in starts:
+                occurrence_rows.append((pattern_id, list(glyph_ids[start : start + pat_len])))
+
+        if occurrence_rows:
+            psycopg2.extras.execute_values(
+                cur,
+                """
+                INSERT INTO T_NGRAM_OCCURENCES (id_pattern, glyph_ids)
+                VALUES %s
+                """,
+                occurrence_rows,
+                page_size=500,
+            )
+
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cur.close()
+        conn.close()
+
     return None
 
 

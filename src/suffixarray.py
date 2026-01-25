@@ -202,16 +202,8 @@ def persist_suffixarray_patterns(
     occurrences: dict[tuple[int, ...], list[int]],
     glyph_ids: Sequence[int],
 ) -> None:
-    """
-    Persist suffix array patterns and their occurrences to database.
-    Similar to persist_patterns in ngram.py.
     
-    Parameters
-    ----------
-    image_id: Image ID to associate patterns with
-    occurrences: Dict mapping pattern -> list of start positions
-    glyph_ids: Sequence of glyph IDs for the image
-    """
+
     patterns = [(pattern, starts) for pattern, starts in occurrences.items() if len(starts) > 1]
     if not patterns:
         return
@@ -255,9 +247,16 @@ def persist_suffixarray_patterns(
             )
 
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         cur.close()
         conn.close()
+        
+    return None
+
+    
 
 
 def store_occurrence_bboxes(image_id: int) -> None:

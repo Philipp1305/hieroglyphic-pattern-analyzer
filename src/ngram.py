@@ -110,8 +110,6 @@ def persist_patterns(
     occurrences: dict[tuple[int, ...], list[int]],
     glyph_ids: Sequence[int],
 ) -> None:
-    
-
     patterns = [
         (ngram, starts) for ngram, starts in occurrences.items() if len(starts) > 1
     ]
@@ -119,8 +117,8 @@ def persist_patterns(
         return None
 
     conn = connect()
+    cur = conn.cursor()
     try:
-        cur = conn.cursor()
 
         pattern_rows = [
             (image_id, list(ngram), len(ngram), len(starts))
@@ -143,7 +141,9 @@ def persist_patterns(
         for (ngram, starts), pattern_id in zip(patterns, pattern_ids):
             pat_len = len(ngram)
             for start in starts:
-                occurrence_rows.append((pattern_id, list(glyph_ids[start : start + pat_len])))
+                occurrence_rows.append(
+                    (pattern_id, list(glyph_ids[start : start + pat_len]))
+                )
 
         if occurrence_rows:
             psycopg2.extras.execute_values(
@@ -161,7 +161,10 @@ def persist_patterns(
         conn.rollback()
         raise
     finally:
-        cur.close()
+        try:
+            cur.close()
+        except Exception:
+            pass
         conn.close()
 
     return None
@@ -264,11 +267,8 @@ def run_ngram(
 
     if occurrences:
         # Delete existing patterns for this image to avoid duplicates
-        delete(
-            "DELETE FROM T_NGRAM_PATTERN WHERE id_image = %s",
-            (image_id,)
-        )
-        
+        delete("DELETE FROM T_NGRAM_PATTERN WHERE id_image = %s", (image_id,))
+
         persist_patterns(image_id, occurrences, glyph_ids)
         store_occurrence_bboxes(image_id)
 

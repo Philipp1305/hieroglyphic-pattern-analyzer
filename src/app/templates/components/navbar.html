@@ -21,7 +21,14 @@
       <a
         class="{{ nav_link_base }} {% if request.endpoint == 'site.collection' %}font-bold text-primary{% else %}font-medium text-text-light dark:text-text-dark hover:text-primary{% endif %}"
         href="{{ url_for('site.collection') }}"
-        {% if request.endpoint == "site.collection" %}aria-current="page"{% endif %}
+        {%
+        if
+        request.endpoint=""
+        ="site.collection"
+        %}aria-current="page"
+        {%
+        endif
+        %}
         >Collection</a
       >
       <div class="flex items-center gap-3">

@@ -23,7 +23,9 @@
           aria-label="Home"
           title="Home"
         >
-          <span class="material-symbols-outlined text-xl leading-none">home</span>
+          <span class="material-symbols-outlined text-xl leading-none"
+            >home</span
+          >
         </a>
         <a
           href="{{ url_for('site.collection') }}"
@@ -31,7 +33,9 @@
           aria-label="Collection"
           title="Collection"
         >
-          <span class="material-symbols-outlined text-xl leading-none">apps</span>
+          <span class="material-symbols-outlined text-xl leading-none"
+            >apps</span
+          >
         </a>
       </div>
       <div class="flex items-center justify-center gap-3">
@@ -74,24 +78,25 @@
         class="flex-1 min-h-0 flex flex-col bg-card-light/90 dark:bg-card-dark/80 rounded-xl border border-border-light dark:border-border-dark backdrop-blur"
       >
         <div class="p-4 border-b border-slate-200 dark:border-border-dark">
-            <h3 class="font-bold flex items-center gap-2">
-              <span class="material-symbols-outlined text-yellow-500 text-base"
-                >pattern</span
+          <h3 class="font-bold flex items-center gap-2">
+            <span class="material-symbols-outlined text-yellow-500 text-base"
+              >pattern</span
+            >
+            Pattern Analysis
+            <span class="relative inline-flex items-center group">
+              <span
+                class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-[11px] font-bold text-primary shadow-sm cursor-help"
+                >?</span
               >
-              Pattern Analysis
-              <span class="relative inline-flex items-center group">
-                <span
-                  class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-[11px] font-bold text-primary shadow-sm cursor-help"
-                  >?</span
-                >
-                <span
-                  class="pointer-events-none absolute left-full top-1/2 z-20 ml-2 w-64 -translate-y-1/2 rounded-lg border border-slate-200 bg-slate-900 text-white text-[11px] font-semibold leading-snug px-3 py-2 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:border-slate-700"
-                >
-                  Lists all maximal suffix-array patterns detected for the selected image.
-                </span>
+              <span
+                class="pointer-events-none absolute left-full top-1/2 z-20 ml-2 w-64 -translate-y-1/2 rounded-lg border border-slate-200 bg-slate-900 text-white text-[11px] font-semibold leading-snug px-3 py-2 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:border-slate-700"
+              >
+                Lists all maximal suffix-array patterns detected for the
+                selected image.
               </span>
-            </h3>
-          </div>
+            </span>
+          </h3>
+        </div>
         <div class="relative flex-1 min-h-[260px]">
           <div
             class="absolute inset-0 hidden items-center justify-center text-sm text-text-secondary-light dark:text-text-secondary-dark px-4 text-center"
@@ -140,10 +145,7 @@
             class="flex-1 bg-slate-50 dark:bg-slate-900 rounded-lg p-3 overflow-y-auto border border-slate-100 dark:border-slate-800"
             data-suffix-glyph-wrapper
           >
-            <div
-              class="grid grid-cols-4 gap-2"
-              data-suffix-glyph-list
-            ></div>
+            <div class="grid grid-cols-4 gap-2" data-suffix-glyph-list></div>
             <div
               class="hidden text-sm text-text-secondary-light dark:text-text-secondary-dark p-3 text-center"
               data-suffix-glyph-empty
@@ -176,7 +178,8 @@
               <span
                 class="pointer-events-none absolute left-full top-1/2 z-20 ml-2 w-64 -translate-y-1/2 rounded-lg border border-slate-200 bg-slate-900 text-white text-[11px] font-semibold leading-snug px-3 py-2 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:border-slate-700"
               >
-                Patterns with the highest repeat-per-length ratio (stability score).
+                Patterns with the highest repeat-per-length ratio (stability
+                score).
               </span>
             </span>
           </h3>
@@ -234,7 +237,8 @@
               <span
                 class="pointer-events-none absolute left-full top-1/2 z-20 ml-2 w-64 -translate-y-1/2 rounded-lg border border-slate-200 bg-slate-900 text-white text-[11px] font-semibold leading-snug px-3 py-2 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:border-slate-700"
               >
-                Internal stems with highest repeat-per-length and consistent boundaries.
+                Internal stems with highest repeat-per-length and consistent
+                boundaries.
               </span>
             </span>
           </h3>
@@ -343,7 +347,7 @@
           </table>
         </div>
       </section>
- 
+
       <section
         class="flex-1 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark flex flex-col overflow-hidden"
       >

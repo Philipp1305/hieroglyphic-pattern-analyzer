@@ -46,61 +46,62 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   let stageOrder = [
-    { key: "upload", title: "Image uploaded" },
-    { key: "json", title: "JSON processed" },
+    { key: "upload", title: "Upload Image" },
+    { key: "json", title: "Process JSON" },
     {
       key: "sort",
-      title: "Sorting algorithm",
-      pendingSubtitle: "Waiting for confirmation in Sorting View",
+      title: "Sort Glyphs",
+      pendingSubtitle: "Waiting for Validation",
     },
-    { key: "suffix", title: "Suffix tree" },
+    { key: "suffix", title: "Pattern Analysis" },
   ];
   let statusesLoaded = false;
   let pendingStatusCode = null;
 
-  const statusMapping = {
-    UPLOAD: {
-      upload: "done",
-      json: "running",
-      sort: "waiting",
-      suffix: "waiting",
-    },
-    JSON: {
-      upload: "done",
-      json: "done",
-      sort: "running",
-      suffix: "waiting",
-    },
-    SORT_VALIDATE: {
-      upload: "done",
-      json: "done",
-      sort: "pending",
-      suffix: "waiting",
-    },
-    SORT: {
-      upload: "done",
-      json: "done",
-      sort: "done",
-      suffix: "running",
-    },
-    NGRAMS: {
-      upload: "done",
-      json: "done",
-      sort: "done",
-      suffix: "running",
-    },
-    SUFFIX: {
-      upload: "done",
-      json: "done",
-      sort: "done",
-      suffix: "done",
-    },
-    DONE: {
-      upload: "done",
-      json: "done",
-      sort: "done",
-      suffix: "done",
-    },
+  const jsonDoneCodes = new Set([
+    "JSON_DONE",
+    "SORT_START",
+    "SORT_VALIDATE",
+    "SORT_DONE",
+    "ANALYZE_START",
+    "ANALYZE_DONE",
+    "DONE",
+  ]);
+  const sortPendingCodes = new Set(["SORT_VALIDATE"]);
+  const sortRunningCodes = new Set(["SORT_START"]);
+  const sortDoneCodes = new Set([
+    "SORT_DONE",
+    "ANALYZE_START",
+    "ANALYZE_DONE",
+    "DONE",
+  ]);
+  const analyzeRunningCodes = new Set(["ANALYZE_START"]);
+  const analyzeDoneCodes = new Set(["ANALYZE_DONE", "DONE"]);
+
+  const resolveStates = (statusCode) => {
+    const code = (statusCode || "").toString().trim().toUpperCase();
+    console.log("[overview] resolveStates", code);
+    const upload = "done"; // upload is always checked
+    const json = jsonDoneCodes.has(code)
+      ? "done"
+      : code === "JSON_START"
+        ? "running"
+        : "running";
+    const sort = sortPendingCodes.has(code)
+      ? "pending"
+      : sortRunningCodes.has(code)
+        ? "running"
+        : sortDoneCodes.has(code)
+          ? "done"
+          : "waiting";
+    const suffix = analyzeDoneCodes.has(code)
+      ? "done"
+      : analyzeRunningCodes.has(code)
+        ? "running"
+        : sortDoneCodes.has(code)
+          ? "pending"
+          : "waiting";
+    return { upload, json, sort, suffix };
   };
 
   const renderPipelineLoading = () => {
@@ -119,13 +120,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     const forceRender = Boolean(options.force);
-    if (!statusesLoaded && !forceRender) {
-      pendingStatusCode = statusCode;
-      renderPipelineLoading();
-      return;
-    }
     const normalized = (statusCode || "").toString().trim().toUpperCase();
-    const states = statusMapping[normalized] || statusMapping.UPLOAD;
+    const states = resolveStates(normalized);
     const html = stageOrder
       .map((stage) => renderStage(stage, states[stage.key] || "waiting"))
       .join("");
@@ -240,15 +236,25 @@ document.addEventListener("DOMContentLoaded", () => {
   const actionRules = [
     {
       key: "sort",
-      lockedStatuses: ["UPLOAD", "JSON"],
+      unlockedStatuses: [
+        "SORT_VALIDATE",
+        "ANALYZE_START",
+        "ANALYZE_DONE",
+        "SORT_DONE",
+        "DONE",
+      ],
     },
     {
       key: "patterns",
-      lockedStatuses: ["UPLOAD", "JSON", "SORT_VALIDATE", "SORT"],
+      unlockedStatuses: ["DONE"],
     },
     {
-      key: "suffix",
-      lockedStatuses: ["UPLOAD", "JSON", "SORT_VALIDATE", "SORT", "NGRAMS"],
+      key: "structure",
+      unlockedStatuses: ["DONE"],
+    },
+    {
+      key: "glyphs",
+      unlockedStatuses: ["DONE"],
     },
   ];
 
@@ -264,7 +270,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const button = card.querySelector("[data-action-button]");
       const badge = card.querySelector("[data-action-badge]");
 
-      const isLocked = rule.lockedStatuses.includes(normalizedStatus);
+      const unlocked = (rule.unlockedStatuses || []).includes(normalizedStatus);
+      const isLocked = !unlocked;
 
       card.classList.toggle("cursor-not-allowed", isLocked);
       if (button) {
@@ -359,116 +366,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const apiUrl = `/api/images/${imageId}?_=${Date.now()}`;
   const metaUrl = `/api/images/${imageId}/meta?_=${Date.now()}`;
-  const statusUrl = `/api/statuses?_=${Date.now()}`;
-  const autoActionMap = {
-    UPLOAD: { event: "c2s:process_image", needsTolerance: false },
-    JSON: { event: "c2s:start_sorting", needsTolerance: true },
-    SORT: { event: "c2s:start_patterns", needsTolerance: false },
-  };
   let metaPayload = null;
-  let statusLabels = {};
   let pageLoaded = false;
-  const triggeredActions = new Set();
+  let labelsLoaded = true; // static labels; no DB fetch needed
 
   const getNormalizedStatus = (value) =>
     (value || "").toString().trim().toUpperCase();
 
-  const getStatusLabel = (code, fallback) => {
-    const normalized = getNormalizedStatus(code);
-    return statusLabels[normalized] || fallback;
-  };
+  const getStatusLabel = (_code, fallback) => fallback;
 
-  const applyStatusLabels = () => {
-    stageOrder = [
-      { key: "upload", title: getStatusLabel("UPLOAD", "Image uploaded") },
-      { key: "json", title: getStatusLabel("JSON", "JSON processed") },
-      {
-        key: "sort",
-        title: getStatusLabel(
-          "SORT_VALIDATE",
-          getStatusLabel("SORT", "Sorting algorithm"),
-        ),
-        pendingSubtitle: "Waiting for confirmation in Sorting View",
-      },
-      { key: "suffix", title: getStatusLabel("SUFFIX", "Suffix tree") },
-    ];
-  };
-
-  const maybeStartAutoPipeline = (statusOverride) => {
-    if (!pageLoaded || !metaPayload || !socket) {
-      console.log("[overview] auto pipeline blocked", {
-        pageLoaded,
-        hasMeta: Boolean(metaPayload),
-        hasSocket: Boolean(socket),
-      });
-      return;
-    }
-    const statusCode = getNormalizedStatus(
-      statusOverride ?? metaPayload.status_code,
-    );
-    console.log("[overview] auto pipeline status", statusCode);
-    const action = autoActionMap[statusCode];
-    if (!action || triggeredActions.has(action.event)) {
-      console.log("[overview] auto pipeline no action", action);
-      return;
-    }
-    const payload = { image_id: Number(imageId) };
-    if (action.needsTolerance) {
-      const tolerance = Number(metaPayload.tolerance);
-      if (!Number.isFinite(tolerance) || tolerance <= 0) {
-        console.log(
-          "[overview] auto pipeline invalid tolerance",
-          metaPayload.tolerance,
-        );
-        return;
-      }
-      payload.tolerance = tolerance;
-    }
-    triggeredActions.add(action.event);
-    console.log("[overview] auto pipeline emit", action.event, payload);
-    socket.emit(action.event, payload);
-  };
+  const applyStatusLabels = () => {};
 
   if (socket) {
-    socket.on("s2c:start_sorting:response", (data) => {
-      console.log("[overview] s2c:start_sorting:response", data);
+    socket.on("s2c:pipeline_status", (data) => {
+      console.log("[overview] s2c:pipeline_status received", data);
       if (!data || String(data.image_id) !== String(imageId)) {
+        console.log("[overview] pipeline_status ignored (different id)");
         return;
       }
-      if (data.status === "success") {
-        renderPipeline(data.status_code || "SORT_VALIDATE");
-      }
-    });
-
-    socket.on("s2c:process_image:response", (data) => {
-      console.log("[overview] s2c:process_image:response", data);
-      if (!data || String(data.image_id) !== String(imageId)) {
-        return;
-      }
-      if (data.status === "success") {
-        renderPipeline(data.status_code || "JSON");
-        maybeStartAutoPipeline("JSON");
-      }
-    });
-
-    socket.on("s2c:start_patterns:response", (data) => {
-      console.log("[overview] s2c:start_patterns:response", data);
-      if (!data || String(data.image_id) !== String(imageId)) {
-        return;
-      }
-      if (data.status === "success") {
-        renderPipeline(data.status_code || "NGRAMS");
+      if (data.status_code) {
+        renderPipeline(data.status_code, { force: true });
+        maybeStopPolling(data.status_code);
       }
     });
   }
 
+  // Delay first render until labels and an initial status are present
+  renderPipelineLoading();
+  let initialStatus = null;
+
+  const tryInitialRender = () => {
+    if (!labelsLoaded || initialStatus === null) return;
+    renderPipeline(initialStatus);
+  };
+
   window.addEventListener("load", () => {
     console.log("[overview] window load");
     pageLoaded = true;
-    maybeStartAutoPipeline();
   });
-
-  renderPipelineLoading();
 
   fetch(apiUrl, { cache: "no-store" })
     .then((response) => {
@@ -481,14 +416,15 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("[overview] image data loaded", data);
       applyTitle(data.title || `Papyrus #${imageId}`);
       applyImage(data.image);
-      renderPipeline(data.status_code);
+      initialStatus = data.status_code;
+      tryInitialRender();
       hideLoading();
     })
     .catch((error) => {
       console.error(error);
       applyTitle("Papyrus konnte nicht geladen werden");
-      renderPipeline();
       hideLoading();
+      tryInitialRender();
     });
 
   fetch(metaUrl, { cache: "no-store" })
@@ -502,37 +438,57 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("[overview] meta loaded", meta);
       metaPayload = meta || {};
       if (meta && meta.status_code) {
-        renderPipeline(meta.status_code);
+        initialStatus = meta.status_code;
+        tryInitialRender();
       }
-      maybeStartAutoPipeline();
     })
     .catch((error) => {
       console.error(error);
     });
 
-  fetch(statusUrl, { cache: "no-store" })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Failed to load status labels");
-      }
-      return response.json();
-    })
-    .then((data) => {
-      const items = data.items || [];
-      statusLabels = items.reduce((acc, item) => {
-        const code = getNormalizedStatus(item.status_code);
-        if (code && !acc[code]) {
-          acc[code] = item.status || "";
+  // Static labels now; mark as loaded immediately.
+  statusesLoaded = true;
+  applyStatusLabels();
+  labelsLoaded = true;
+  tryInitialRender();
+
+  // Fallback polling to keep pipeline fresh even if sockets fail.
+  const pollIntervalMs = 3000;
+  const stopPollingCodes = new Set(["DONE"]);
+
+  let pollTimer = null;
+
+  const maybeStopPolling = (statusCode) => {
+    const code = (statusCode || "").toString().trim().toUpperCase();
+    if (stopPollingCodes.has(code) && pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+      console.log("[overview] polling stopped at", code);
+    }
+  };
+
+  const startPolling = () => {
+    if (pollTimer) return;
+    pollTimer = setInterval(pollStatus, pollIntervalMs);
+    console.log("[overview] polling started");
+  };
+
+  const pollStatus = () => {
+    fetch(metaUrl, { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to load papyrus metadata");
         }
-        return acc;
-      }, {});
-      statusesLoaded = true;
-      applyStatusLabels();
-      const nextStatus =
-        pendingStatusCode ?? (metaPayload ? metaPayload.status_code : null);
-      renderPipeline(nextStatus);
-    })
-    .catch((error) => {
-      console.error(error);
-    });
+        return response.json();
+      })
+      .then((meta) => {
+        if (meta && meta.status_code) {
+          renderPipeline(meta.status_code);
+          console.log("[overview] poll status_code", meta.status_code);
+          maybeStopPolling(meta.status_code);
+        }
+      })
+      .catch((error) => console.error("[overview] poll meta error", error));
+  };
+  startPolling();
 });

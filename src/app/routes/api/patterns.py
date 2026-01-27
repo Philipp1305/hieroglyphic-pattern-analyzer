@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Sequence
+from typing import Iterable, Sequence, cast
 
 from flask import jsonify
 
@@ -16,10 +16,10 @@ def get_image_patterns(image_id: int):
 
     patterns = select(
         """
-        SELECT id, gardiner_ids, length, count
-        FROM t_ngram_pattern
+        SELECT id, gardiner_ids, sequence_length, sequence_count
+        FROM t_suffixarray_patterns
         WHERE id_image = %s
-        ORDER BY length DESC, count DESC, id ASC
+        ORDER BY sequence_length DESC, sequence_count DESC, id ASC
         """,
         (image_id,),
     )
@@ -144,8 +144,8 @@ def _occurrences_with_bboxes(
             bbox.bbox_y,
             bbox.bbox_height,
             bbox.bbox_width
-        FROM T_NGRAM_OCCURENCES AS occ
-        LEFT JOIN T_NGRAM_OCCURENCES_BBOXES AS bbox ON bbox.id_occ = occ.id
+        FROM t_suffixarray_occurences AS occ
+        LEFT JOIN t_suffixarray_occurences_bboxes AS bbox ON bbox.id_occ = occ.id
         WHERE occ.id_pattern = ANY(%s)
         ORDER BY occ.id, bbox.id
         """,
@@ -170,7 +170,8 @@ def _occurrences_with_bboxes(
             and bbox_h is not None
             and bbox_w is not None
         ):
-            by_pattern[pattern_key][occ_key]["bboxes"].append(
+            bboxes = cast(list, by_pattern[pattern_key][occ_key]["bboxes"])
+            bboxes.append(
                 {
                     "bbox_x": float(bbox_x),
                     "bbox_y": float(bbox_y),

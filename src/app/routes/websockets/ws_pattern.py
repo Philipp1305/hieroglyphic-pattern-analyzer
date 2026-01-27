@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from flask import request
+from flask import request, current_app
 
 from ... import socketio
 from src.database.tools import delete, select, update
 from src.ngram import run_ngram
+from src.app.services.pipeline_service import emit_pipeline_status
 
 
 def _emit_to_request(event: str, payload: dict) -> None:
@@ -42,6 +43,13 @@ def start_patterns(payload=None):
         return
 
     try:
+        emit_pipeline_status(
+            image_id_int,
+            "ANALYZE_START",
+            current_app._get_current_object(),  # type: ignore[attr-defined]
+            status="running",
+        )
+        current_app.logger.info("[ws_pattern] ANALYZE_START image_id=%s", image_id_int)
         # Clear previous pattern results for idempotent runs.
         delete(
             "DELETE FROM T_NGRAM_PATTERN WHERE id_image = %s",
@@ -54,6 +62,12 @@ def start_patterns(payload=None):
         occurrences = sum(counts.values())
         print(
             f"[ws_pattern] start_patterns completed patterns={patterns} occurrences={occurrences}"
+        )
+        current_app.logger.info(
+            "[ws_pattern] ANALYZE_DONE image_id=%s patterns=%s occurrences=%s",
+            image_id_int,
+            patterns,
+            occurrences,
         )
 
         status_rows = select(
@@ -69,23 +83,22 @@ def start_patterns(payload=None):
         else:
             print("[ws_pattern] start_patterns missing NGRAMS status code")
 
-        _emit_to_request(
-            "s2c:start_patterns:response",
-            {
-                "image_id": image_id_int,
-                "status": "success",
-                "status_code": "NGRAMS",
-                "patterns": patterns,
-                "occurrences": occurrences,
-            },
+        emit_pipeline_status(
+            image_id_int,
+            "ANALYZE_DONE",
+            current_app._get_current_object(),  # type: ignore[attr-defined]
+            status="success",
+            extra={"patterns": patterns, "occurrences": occurrences},
         )
     except Exception as exc:
         print(f"[ws_pattern] start_patterns error={exc}")
-        _emit_to_request(
-            "s2c:start_patterns:response",
-            {
-                "image_id": image_id_int,
-                "status": "error",
-                "message": str(exc),
-            },
+        current_app.logger.exception(
+            "[ws_pattern] ANALYZE_ERROR image_id=%s", image_id_int
+        )
+        emit_pipeline_status(
+            image_id_int,
+            "ANALYZE_ERROR",
+            current_app._get_current_object(),  # type: ignore[attr-defined]
+            status="error",
+            extra={"message": str(exc)},
         )

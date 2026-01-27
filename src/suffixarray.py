@@ -19,7 +19,7 @@ def fetch_sorted_gardiner_ids(image_id: int) -> list[tuple[int, int]]:
         """
         SELECT gs.v_column, gs.v_row, gr.id_gardiner, gr.id
         FROM T_GLYPHES_SORTED AS gs
-        JOIN T_GLYPHES_RAW AS gr ON gr.id = gs.id_glyph
+        LEFT JOIN T_GLYPHES_RAW AS gr ON gr.id = gs.id_glyph
         WHERE gr.id_image = %s
         ORDER BY gs.v_column, gs.v_row
         """,
@@ -224,7 +224,6 @@ def persist_suffixarray_patterns(
     conn = connect()
     cur = conn.cursor()
     try:
-
         pattern_rows = [
             (image_id, list(pattern), len(pattern), len(starts))
             for pattern, starts in patterns
@@ -284,7 +283,7 @@ def store_occurrence_bboxes(image_id: int) -> None:
         """
         SELECT occ.id, occ.glyph_ids
         FROM T_SUFFIXARRAY_OCCURENCES AS occ
-        JOIN T_SUFFIXARRAY_PATTERNS AS pat ON pat.id = occ.id_pattern
+        LEFT JOIN T_SUFFIXARRAY_PATTERNS AS pat ON pat.id = occ.id_pattern
         WHERE pat.id_image = %s
         """,
         (image_id,),
@@ -292,11 +291,12 @@ def store_occurrence_bboxes(image_id: int) -> None:
     if not occ_rows:
         return
 
+    # Use a left join so we still get geometry even if a glyph is missing from the sorted table.
     glyph_rows = select(
         """
         SELECT gr.id, gr.bbox_x, gr.bbox_y, gr.bbox_width, gr.bbox_height, gs.v_column
         FROM T_GLYPHES_RAW AS gr
-        JOIN T_GLYPHES_SORTED AS gs ON gs.id_glyph = gr.id
+        LEFT JOIN T_GLYPHES_SORTED AS gs ON gs.id_glyph = gr.id
         WHERE gr.id_image = %s
         """,
         (image_id,),
@@ -304,10 +304,18 @@ def store_occurrence_bboxes(image_id: int) -> None:
     if not glyph_rows:
         return
 
-    glyph_map: dict[int, tuple[float, float, float, float, int]] = {
-        int(gid): (float(x), float(y), float(width), float(height), int(col))
-        for gid, x, y, width, height, col in glyph_rows
-    }
+    glyph_map: dict[int, tuple[float, float, float, float, int]] = {}
+    for gid, x, y, width, height, col in glyph_rows:
+        if any(val is None for val in (gid, x, y, width, height)):
+            continue
+        col_idx = int(col) if col is not None else 0
+        glyph_map[int(gid)] = (
+            float(x),
+            float(y),
+            float(width),
+            float(height),
+            col_idx,
+        )
 
     bbox_rows: list[tuple[int, float, float, float, float]] = []
 
@@ -319,6 +327,7 @@ def store_occurrence_bboxes(image_id: int) -> None:
         for glyph_id in glyph_ids:
             glyph_data = glyph_map.get(int(glyph_id))
             if glyph_data is None:
+                # Skip missing glyphs entirely; without geometry we cannot build a bbox.
                 continue
             x, y, width, height, col = glyph_data
             glyphs_by_column.setdefault(col, []).append((x, y, width, height))
@@ -386,7 +395,7 @@ def run_suffixarray(
             WHERE id_occ IN (
                 SELECT occ.id
                 FROM T_SUFFIXARRAY_OCCURENCES AS occ
-                JOIN T_SUFFIXARRAY_PATTERNS AS pat ON pat.id = occ.id_pattern
+                LEFT JOIN T_SUFFIXARRAY_PATTERNS AS pat ON pat.id = occ.id_pattern
                 WHERE pat.id_image = %s
             )
             """,

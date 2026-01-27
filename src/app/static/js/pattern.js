@@ -143,7 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       })
       .catch((error) => {
-      console.error("[pattern] load image error", error);
+        console.error("[pattern] load image error", error);
         hasErrorOverlay = true;
         showOverlay("Image could not be loaded", { showSpinner: false });
         imageReady = true;
@@ -165,7 +165,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderBoundingBoxes();
     };
     img.onerror = () => {
-    console.error("[pattern] failed to load image");
+      console.error("[pattern] failed to load image");
       hasErrorOverlay = true;
       showOverlay("Image could not be loaded", { showSpinner: false });
       imageReady = true;

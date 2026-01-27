@@ -119,7 +119,6 @@ def persist_patterns(
     conn = connect()
     cur = conn.cursor()
     try:
-
         pattern_rows = [
             (image_id, list(ngram), len(ngram), len(starts))
             for ngram, starts in patterns

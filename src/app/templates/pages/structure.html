@@ -1,0 +1,430 @@
+<div
+  class="flex h-screen flex-col bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark"
+  data-suffix-root
+  data-image-id="{{ image_id or '' }}"
+>
+  <header
+    class="w-full border-b border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark h-16"
+  >
+    <div
+      class="grid h-full w-full grid-cols-3 items-center px-4 sm:px-6 lg:px-8"
+    >
+      <div class="flex justify-start gap-2">
+        <a
+          href="{% if image_id %}{{ url_for('site.overview', id=image_id) }}{% else %}{{ url_for('site.overview') }}{% endif %}"
+          class="inline-flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark px-4 py-2 text-sm font-semibold transition-colors hover:border-primary hover:text-primary"
+        >
+          <span class="material-symbols-outlined text-base">arrow_back</span>
+          Back to overview
+        </a>
+        <a
+          href="{{ url_for('site.home') }}"
+          class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border-light dark:border-border-dark text-text-light dark:text-text-dark transition-colors hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          aria-label="Home"
+          title="Home"
+        >
+          <span class="material-symbols-outlined text-xl leading-none">home</span>
+        </a>
+        <a
+          href="{{ url_for('site.collection') }}"
+          class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border-light dark:border-border-dark text-text-light dark:text-text-dark transition-colors hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          aria-label="Collection"
+          title="Collection"
+        >
+          <span class="material-symbols-outlined text-xl leading-none">apps</span>
+        </a>
+      </div>
+      <div class="flex items-center justify-center gap-3">
+        <div class="size-8"></div>
+        <h2
+          class="text-2xl font-bold text-primary leading-tight tracking-[-0.015em]"
+          style="font-family: &quot;Caesar Dressing&quot;, cursive"
+        >
+          GlyPat
+        </h2>
+      </div>
+      <div class="flex items-center justify-end">
+        <button
+          id="themeToggle"
+          type="button"
+          class="inline-flex items-center justify-center rounded-full border border-border-light dark:border-border-dark p-2 text-text-light dark:text-text-dark transition-colors hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          aria-pressed="false"
+        >
+          <span class="sr-only">Toggle color theme</span>
+          <span
+            class="material-symbols-outlined text-xl leading-none dark:hidden"
+            >dark_mode</span
+          >
+          <span
+            class="material-symbols-outlined hidden text-xl leading-none dark:inline"
+            >light_mode</span
+          >
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main
+    class="flex-1 overflow-hidden min-h-0 p-6 grid grid-cols-12 gap-6 h-[calc(100vh-64px)] relative"
+    data-suffix-overlay-container
+  >
+    <!-- Column 1: Pattern details (top) + Glyph analysis (bottom) -->
+    <div class="col-span-4 h-full min-h-0 flex flex-col gap-6">
+      <section
+        class="flex-1 min-h-0 flex flex-col bg-card-light/90 dark:bg-card-dark/80 rounded-xl border border-border-light dark:border-border-dark backdrop-blur"
+      >
+        <div class="p-4 border-b border-slate-200 dark:border-border-dark">
+            <h3 class="font-bold flex items-center gap-2">
+              <span class="material-symbols-outlined text-yellow-500 text-base"
+                >pattern</span
+              >
+              Pattern Analysis
+              <span class="relative inline-flex items-center group">
+                <span
+                  class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-[11px] font-bold text-primary shadow-sm cursor-help"
+                  >?</span
+                >
+                <span
+                  class="pointer-events-none absolute left-full top-1/2 z-20 ml-2 w-64 -translate-y-1/2 rounded-lg border border-slate-200 bg-slate-900 text-white text-[11px] font-semibold leading-snug px-3 py-2 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:border-slate-700"
+                >
+                  Lists all maximal suffix-array patterns detected for the selected image.
+                </span>
+              </span>
+            </h3>
+          </div>
+        <div class="relative flex-1 min-h-[260px]">
+          <div
+            class="absolute inset-0 hidden items-center justify-center text-sm text-text-secondary-light dark:text-text-secondary-dark px-4 text-center"
+            data-suffix-empty
+          >
+            <p class="p-4">No suffix patterns available yet.</p>
+          </div>
+          <div class="h-full overflow-y-auto p-2 space-y-2" data-suffix-list>
+            <!-- Filled dynamically via suffix.js -->
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="flex-1 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark flex flex-col overflow-hidden"
+      >
+        <div class="p-4 border-b border-slate-200 dark:border-border-dark">
+          <h3 class="font-bold flex items-center gap-2">
+            <span class="material-symbols-outlined text-purple-500 text-base"
+              >search_check</span
+            >
+            Glyph Analysis
+            <span class="relative inline-flex items-center group">
+              <span
+                class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-[11px] font-bold text-primary shadow-sm cursor-help"
+                >?</span
+              >
+              <span
+                class="pointer-events-none absolute left-full top-1/2 z-20 ml-2 w-64 -translate-y-1/2 rounded-lg border border-slate-200 bg-slate-900 text-white text-[11px] font-semibold leading-snug px-3 py-2 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:border-slate-700"
+              >
+                Browse or search Gardiner codes and glyph symbols.
+              </span>
+            </span>
+          </h3>
+        </div>
+        <div class="p-4 flex flex-col h-full">
+          <div class="relative mb-4">
+            <input
+              class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-border-dark rounded-lg px-4 py-2 text-sm focus:ring-1 focus:ring-primary focus:border-primary"
+              placeholder="Gardiner Code (e.g. A1)..."
+              type="text"
+              data-suffix-glyph-search
+            />
+          </div>
+          <div
+            class="flex-1 bg-slate-50 dark:bg-slate-900 rounded-lg p-3 overflow-y-auto border border-slate-100 dark:border-slate-800"
+            data-suffix-glyph-wrapper
+          >
+            <div
+              class="grid grid-cols-4 gap-2"
+              data-suffix-glyph-list
+            ></div>
+            <div
+              class="hidden text-sm text-text-secondary-light dark:text-text-secondary-dark p-3 text-center"
+              data-suffix-glyph-empty
+            >
+              No glyphs found for this image.
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Column 2: Stable sequences (top) + Stable stems (bottom) -->
+    <div class="col-span-4 flex flex-col gap-6 h-full min-h-0">
+      <section
+        class="flex-1 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark flex flex-col overflow-hidden"
+      >
+        <div
+          class="p-4 border-b border-slate-200 dark:border-border-dark flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30"
+        >
+          <h3 class="font-bold flex items-center gap-2">
+            <span class="material-symbols-outlined text-blue-500 text-base"
+              >link</span
+            >
+            Stable Sequences
+            <span class="relative inline-flex items-center group">
+              <span
+                class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-[11px] font-bold text-primary shadow-sm cursor-help"
+                >?</span
+              >
+              <span
+                class="pointer-events-none absolute left-full top-1/2 z-20 ml-2 w-64 -translate-y-1/2 rounded-lg border border-slate-200 bg-slate-900 text-white text-[11px] font-semibold leading-snug px-3 py-2 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:border-slate-700"
+              >
+                Patterns with the highest repeat-per-length ratio (stability score).
+              </span>
+            </span>
+          </h3>
+        </div>
+        <div class="flex-1 overflow-auto">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-slate-50 dark:bg-slate-900 sticky top-0 z-20">
+              <tr>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase bg-slate-50 dark:bg-slate-900 z-10"
+                >
+                  Sequence
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center bg-slate-50 dark:bg-slate-900 z-10"
+                >
+                  Frequency
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase bg-slate-50 dark:bg-slate-900 z-10"
+                >
+                  Stability
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center bg-slate-50 dark:bg-slate-900 z-10"
+                >
+                  Analyse
+                </th>
+              </tr>
+            </thead>
+            <tbody
+              class="divide-y divide-slate-100 dark:divide-border-dark"
+              data-suffix-stable-body
+            ></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section
+        class="flex-1 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark flex flex-col overflow-hidden"
+      >
+        <div
+          class="p-4 border-b border-slate-200 dark:border-border-dark bg-slate-50/50 dark:bg-slate-800/30 flex justify-between items-center"
+        >
+          <h3 class="font-bold flex items-center gap-2">
+            <span class="material-symbols-outlined text-amber-500 text-base"
+              >splitscreen</span
+            >
+            Stable Stems
+            <span class="relative inline-flex items-center group">
+              <span
+                class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-[11px] font-bold text-primary shadow-sm cursor-help"
+                >?</span
+              >
+              <span
+                class="pointer-events-none absolute left-full top-1/2 z-20 ml-2 w-64 -translate-y-1/2 rounded-lg border border-slate-200 bg-slate-900 text-white text-[11px] font-semibold leading-snug px-3 py-2 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:border-slate-700"
+              >
+                Internal stems with highest repeat-per-length and consistent boundaries.
+              </span>
+            </span>
+          </h3>
+        </div>
+        <div class="flex-1 overflow-auto">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-slate-50 dark:bg-slate-900 sticky top-0 z-20">
+              <tr>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase bg-slate-50 dark:bg-slate-900"
+                >
+                  Stem
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center bg-slate-50 dark:bg-slate-900"
+                >
+                  Frequency
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase bg-slate-50 dark:bg-slate-900"
+                >
+                  Stability
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center bg-slate-50 dark:bg-slate-900"
+                >
+                  Productivity
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center bg-slate-50 dark:bg-slate-900"
+                >
+                  Boundary
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center bg-slate-50 dark:bg-slate-900"
+                >
+                  Analyse
+                </th>
+              </tr>
+            </thead>
+            <tbody
+              class="divide-y divide-slate-100 dark:divide-border-dark"
+              data-suffix-stem-body
+            ></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- Column 3: Prefixes (top) + Suffixes (bottom) -->
+    <div class="col-span-4 flex flex-col gap-6 h-full min-h-0">
+      <section
+        class="flex-1 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark flex flex-col overflow-hidden"
+      >
+        <div
+          class="p-4 border-b border-slate-200 dark:border-border-dark bg-slate-50/50 dark:bg-slate-800/30 flex justify-between items-center"
+        >
+          <h3 class="font-bold flex items-center gap-2">
+            <span class="material-symbols-outlined text-green-500 text-base"
+              >first_page</span
+            >
+            Most Prefixes
+            <span class="relative inline-flex items-center group">
+              <span
+                class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-[11px] font-bold text-primary shadow-sm cursor-help"
+                >?</span
+              >
+              <span
+                class="pointer-events-none absolute left-full top-1/2 z-20 ml-2 w-64 -translate-y-1/2 rounded-lg border border-slate-200 bg-slate-900 text-white text-[11px] font-semibold leading-snug px-3 py-2 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:border-slate-700"
+              >
+                Share of patterns that start with each prefix sequence.
+              </span>
+            </span>
+          </h3>
+        </div>
+        <div class="flex-1 overflow-auto">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-slate-50 dark:bg-slate-900 sticky top-0 z-20">
+              <tr>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase bg-slate-50 dark:bg-slate-900"
+                >
+                  Sequence
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center bg-slate-50 dark:bg-slate-900"
+                >
+                  Frequency
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center bg-slate-50 dark:bg-slate-900"
+                >
+                  %
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center bg-slate-50 dark:bg-slate-900"
+                >
+                  Analyse
+                </th>
+              </tr>
+            </thead>
+            <tbody
+              class="divide-y divide-slate-100 dark:divide-border-dark"
+              data-suffix-prefix-body
+            ></tbody>
+          </table>
+        </div>
+      </section>
+ 
+      <section
+        class="flex-1 bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-border-dark flex flex-col overflow-hidden"
+      >
+        <div
+          class="p-4 border-b border-slate-200 dark:border-border-dark bg-slate-50/50 dark:bg-slate-800/30"
+        >
+          <h3 class="font-bold flex items-center gap-2">
+            <span class="material-symbols-outlined text-orange-400 text-base"
+              >last_page</span
+            >
+            Most Suffixes
+            <span class="relative inline-flex items-center group">
+              <span
+                class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-[11px] font-bold text-primary shadow-sm cursor-help"
+                >?</span
+              >
+              <span
+                class="pointer-events-none absolute left-full top-1/2 z-20 ml-2 w-64 -translate-y-1/2 rounded-lg border border-slate-200 bg-slate-900 text-white text-[11px] font-semibold leading-snug px-3 py-2 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:border-slate-700"
+              >
+                Share of patterns that end with each suffix sequence.
+              </span>
+            </span>
+          </h3>
+        </div>
+        <div class="flex-1 overflow-y-auto space-y-3">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-slate-50 dark:bg-slate-900 sticky top-0 z-20">
+              <tr>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase bg-slate-50 dark:bg-slate-900"
+                >
+                  Sequence
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center bg-slate-50 dark:bg-slate-900"
+                >
+                  Frequency
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center bg-slate-50 dark:bg-slate-900"
+                >
+                  %
+                </th>
+                <th
+                  class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center bg-slate-50 dark:bg-slate-900"
+                >
+                  Analyse
+                </th>
+              </tr>
+            </thead>
+            <tbody
+              class="divide-y divide-slate-100 dark:divide-border-dark"
+              data-suffix-suffix-body
+            ></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div
+    class="absolute inset-x-0 bottom-0 top-16 z-30 hidden flex items-center justify-center bg-background-light/85 dark:bg-background-dark/80 backdrop-blur-sm"
+    data-suffix-loading
+  >
+    <div
+      class="flex flex-col items-center gap-3 text-text-secondary-light dark:text-text-secondary-dark"
+    >
+      <div class="relative flex h-12 w-12" data-suffix-loading-spinner>
+        <span
+          class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
+        ></span>
+        <span
+          class="relative inline-flex h-12 w-12 rounded-full bg-primary/70"
+        ></span>
+      </div>
+      <p
+        class="text-sm font-semibold tracking-wide uppercase"
+        data-suffix-loading-text
+      >
+        Loading…
+      </p>
+    </div>
+  </div>
+</div>

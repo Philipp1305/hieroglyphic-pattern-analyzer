@@ -53,7 +53,6 @@ document.addEventListener("DOMContentLoaded", () => {
       title: "Sorting algorithm",
       pendingSubtitle: "Waiting for confirmation in Sorting View",
     },
-    { key: "ngrams", title: "N-Grams" },
     { key: "suffix", title: "Suffix tree" },
   ];
   let statusesLoaded = false;
@@ -64,49 +63,42 @@ document.addEventListener("DOMContentLoaded", () => {
       upload: "done",
       json: "running",
       sort: "waiting",
-      ngrams: "waiting",
       suffix: "waiting",
     },
     JSON: {
       upload: "done",
       json: "done",
       sort: "running",
-      ngrams: "waiting",
       suffix: "waiting",
     },
     SORT_VALIDATE: {
       upload: "done",
       json: "done",
       sort: "pending",
-      ngrams: "waiting",
       suffix: "waiting",
     },
     SORT: {
       upload: "done",
       json: "done",
       sort: "done",
-      ngrams: "running",
-      suffix: "waiting",
+      suffix: "running",
     },
     NGRAMS: {
       upload: "done",
       json: "done",
       sort: "done",
-      ngrams: "done",
       suffix: "running",
     },
     SUFFIX: {
       upload: "done",
       json: "done",
       sort: "done",
-      ngrams: "done",
       suffix: "done",
     },
     DONE: {
       upload: "done",
       json: "done",
       sort: "done",
-      ngrams: "done",
       suffix: "done",
     },
   };
@@ -251,7 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
       lockedStatuses: ["UPLOAD", "JSON"],
     },
     {
-      key: "ngrams",
+      key: "patterns",
       lockedStatuses: ["UPLOAD", "JSON", "SORT_VALIDATE", "SORT"],
     },
     {
@@ -371,7 +363,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const autoActionMap = {
     UPLOAD: { event: "c2s:process_image", needsTolerance: false },
     JSON: { event: "c2s:start_sorting", needsTolerance: true },
-    SORT: { event: "c2s:start_ngrams", needsTolerance: false },
+    SORT: { event: "c2s:start_patterns", needsTolerance: false },
   };
   let metaPayload = null;
   let statusLabels = {};
@@ -398,7 +390,6 @@ document.addEventListener("DOMContentLoaded", () => {
         ),
         pendingSubtitle: "Waiting for confirmation in Sorting View",
       },
-      { key: "ngrams", title: getStatusLabel("NGRAMS", "N-Grams") },
       { key: "suffix", title: getStatusLabel("SUFFIX", "Suffix tree") },
     ];
   };
@@ -460,8 +451,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    socket.on("s2c:start_ngrams:response", (data) => {
-      console.log("[overview] s2c:start_ngrams:response", data);
+    socket.on("s2c:start_patterns:response", (data) => {
+      console.log("[overview] s2c:start_patterns:response", data);
       if (!data || String(data.image_id) !== String(imageId)) {
         return;
       }

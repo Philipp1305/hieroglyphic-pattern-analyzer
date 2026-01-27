@@ -15,18 +15,18 @@ def _emit_to_request(event: str, payload: dict) -> None:
         socketio.emit(event, payload)
 
 
-@socketio.on("c2s:start_ngrams")
-def start_ngrams(payload=None):
-    print(f"[ws_ngram] c2s:start_ngrams payload={payload}")
+@socketio.on("c2s:start_patterns")
+def start_patterns(payload=None):
+    print(f"[ws_pattern] c2s:start_patterns payload={payload}")
     if isinstance(payload, dict):
         image_id = payload.get("image_id")
     else:
         image_id = payload
 
     if not image_id:
-        print("[ws_ngram] start_ngrams missing image_id")
+        print("[ws_pattern] start_patterns missing image_id")
         _emit_to_request(
-            "s2c:start_ngrams:response",
+            "s2c:start_patterns:response",
             {"status": "error", "message": "image_id is required"},
         )
         return
@@ -34,26 +34,26 @@ def start_ngrams(payload=None):
     try:
         image_id_int = int(image_id)
     except (TypeError, ValueError):
-        print(f"[ws_ngram] start_ngrams invalid image_id={image_id}")
+        print(f"[ws_pattern] start_patterns invalid image_id={image_id}")
         _emit_to_request(
-            "s2c:start_ngrams:response",
+            "s2c:start_patterns:response",
             {"status": "error", "message": "image_id must be an integer"},
         )
         return
 
     try:
-        # Clear previous N-gram results for idempotent runs.
+        # Clear previous pattern results for idempotent runs.
         delete(
             "DELETE FROM T_NGRAM_PATTERN WHERE id_image = %s",
             (image_id_int,),
         )
 
-        print(f"[ws_ngram] start_ngrams image_id={image_id_int} starting")
+        print(f"[ws_pattern] start_patterns image_id={image_id_int} starting")
         counts = run_ngram(image_id_int)
         patterns = len(counts)
         occurrences = sum(counts.values())
         print(
-            f"[ws_ngram] start_ngrams completed patterns={patterns} occurrences={occurrences}"
+            f"[ws_pattern] start_patterns completed patterns={patterns} occurrences={occurrences}"
         )
 
         status_rows = select(
@@ -65,12 +65,12 @@ def start_ngrams(payload=None):
                 "UPDATE T_IMAGES SET id_status = %s WHERE id = %s",
                 (status_id, image_id_int),
             )
-            print(f"[ws_ngram] start_ngrams updated status_id={status_id}")
+            print(f"[ws_pattern] start_patterns updated status_id={status_id}")
         else:
-            print("[ws_ngram] start_ngrams missing NGRAMS status code")
+            print("[ws_pattern] start_patterns missing NGRAMS status code")
 
         _emit_to_request(
-            "s2c:start_ngrams:response",
+            "s2c:start_patterns:response",
             {
                 "image_id": image_id_int,
                 "status": "success",
@@ -80,9 +80,9 @@ def start_ngrams(payload=None):
             },
         )
     except Exception as exc:
-        print(f"[ws_ngram] start_ngrams error={exc}")
+        print(f"[ws_pattern] start_patterns error={exc}")
         _emit_to_request(
-            "s2c:start_ngrams:response",
+            "s2c:start_patterns:response",
             {
                 "image_id": image_id_int,
                 "status": "error",

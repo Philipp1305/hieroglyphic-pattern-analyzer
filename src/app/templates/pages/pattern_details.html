@@ -69,11 +69,11 @@
       class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:px-6 lg:px-8 h-[90vh]"
     >
       <a
-        href="{% if image_id %}{{ url_for('site.ngrams_page', id=image_id) }}{% else %}{{ url_for('site.ngrams_page') }}{% endif %}"
+        href="{% if image_id %}{{ url_for('site.pattern_page', id=image_id) }}{% else %}{{ url_for('site.pattern_page') }}{% endif %}"
         class="self-start inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors hover:text-primary max-w-[220px] whitespace-nowrap"
       >
         <span class="material-symbols-outlined text-base">arrow_back</span>
-        Back to N-grams
+        Back to Patterns
       </a>
       <div
         class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark shadow-lg overflow-hidden flex flex-col h-full relative"

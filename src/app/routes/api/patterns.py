@@ -9,8 +9,8 @@ from src.database.tools import select
 from . import bp
 
 
-@bp.get("/images/<int:image_id>/ngrams")
-def get_image_ngrams(image_id: int):
+@bp.get("/images/<int:image_id>/patterns")
+def get_image_patterns(image_id: int):
     if not _image_exists(image_id):
         return {"error": "not found"}, 404
 

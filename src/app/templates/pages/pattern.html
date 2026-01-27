@@ -1,6 +1,6 @@
 <div
   class="flex h-screen flex-col bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark"
-  data-ngram-root
+  data-pattern-root
   data-image-id="{{ image_id or '' }}"
 >
   <header
@@ -71,12 +71,12 @@
     <div class="relative flex h-full flex-col gap-3 lg:flex-row lg:gap-0">
       <div
         class="absolute inset-0 z-30 hidden flex items-center justify-center bg-background-light/85 dark:bg-background-dark/80 backdrop-blur-sm"
-        data-ngram-loading
+        data-pattern-loading
       >
         <div
           class="flex flex-col items-center gap-3 text-text-secondary-light dark:text-text-secondary-dark"
         >
-          <div class="relative flex h-12 w-12" data-ngram-loading-spinner>
+          <div class="relative flex h-12 w-12" data-pattern-loading-spinner>
             <span
               class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
             ></span>
@@ -86,7 +86,7 @@
           </div>
           <p
             class="text-sm font-semibold tracking-wide uppercase"
-            data-ngram-loading-text
+            data-pattern-loading-text
           >
             Loading workspace…
           </p>
@@ -98,7 +98,7 @@
       >
         <div class="p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 class="text-xl font-bold text-gray-900 dark:text-white pb-3">
-            N-Gram Analysis
+            Pattern Analysis
           </h2>
           <!-- SearchBar -->
           <div class="pb-3">
@@ -117,7 +117,7 @@
                   class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border-none bg-gray-100 dark:bg-gray-800 focus:border-none h-full placeholder:text-gray-500 dark:placeholder:text-gray-400 px-4 pl-2 text-sm font-normal"
                   placeholder="Filter by Gardiner code…"
                   value=""
-                  data-ngram-search
+                  data-pattern-search
                 />
               </div>
             </label>
@@ -129,12 +129,12 @@
             </p>
             <div
               class="flex gap-2 overflow-x-auto max-w-full pb-1 custom-scrollbar custom-scrollbar-thin"
-              data-ngram-filters
+              data-pattern-filters
             >
               <button
                 type="button"
                 class="flex h-7 cursor-pointer shrink-0 items-center justify-center gap-x-2 rounded-lg bg-primary/20 text-primary px-3 text-sm font-semibold leading-normal"
-                data-ngram-filter="all"
+                data-pattern-filter="all"
                 aria-pressed="true"
               >
                 All
@@ -143,20 +143,20 @@
             <p
               class="text-xs text-text-secondary-light dark:text-text-secondary-dark"
             >
-              <span data-ngram-filter-count>0</span> patterns
+              <span data-pattern-filter-count>0</span> patterns
             </p>
           </div>
         </div>
         <div class="relative flex-1 min-h-[260px]">
           <div
             class="absolute inset-0 hidden items-center justify-center text-sm text-text-secondary-light dark:text-text-secondary-dark px-4 text-center"
-            data-ngram-empty
+            data-pattern-empty
           >
-            <p class="p-4">No N-grams available yet.</p>
+            <p class="p-4">No pattern available yet.</p>
           </div>
           <div
             class="h-full overflow-y-auto p-2 space-y-2"
-            data-ngram-list
+            data-pattern-list
           ></div>
         </div>
       </aside>
@@ -166,24 +166,24 @@
       >
         <div
           class="rounded-xl border border-border-light dark:border-border-dark bg-card-light/90 dark:bg-card-dark/85 px-4 py-3 space-y-3 max-h-56 overflow-y-auto shadow-sm"
-          data-ngram-selection-panel
+          data-pattern-selection-panel
         >
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-2">
               <span
                 class="text-[11px] tracking-wide rounded-full bg-primary/10 text-primary px-2 py-0.5 font-semibold"
-                data-ngram-selected-length
+                data-pattern-selected-length
                 >n = —</span
               >
               <span
                 class="text-[11px] uppercase tracking-wide rounded-full bg-border-light dark:bg-border-dark px-2 py-0.5 font-semibold text-text-secondary-light dark:text-text-secondary-dark"
-                data-ngram-selected-count
+                data-pattern-selected-count
                 >Occurrences:</span
               >
             </div>
             <a
               href="#"
-              data-ngram-view-details
+              data-pattern-view-details
               class="inline-flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark px-3 py-1.5 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark hover:border-primary hover:text-primary transition-colors pointer-events-none opacity-60"
             >
               <span class="material-symbols-outlined text-sm"
@@ -194,14 +194,14 @@
           </div>
           <div
             class="rounded-xl border border-border-light dark:border-border-dark bg-white/85 dark:bg-gray-900/75 px-4 py-3 shadow-inner text-2xl font-semibold tracking-widest text-text-light dark:text-text-dark leading-tight min-h-16 overflow-x-auto whitespace-nowrap custom-scrollbar"
-            data-ngram-selected-glyphs
+            data-pattern-selected-glyphs
           >
             —
           </div>
           <div class="flex flex-col gap-3 md:flex-row md:items-center md:gap-3">
             <div
               class="rounded-lg border border-dashed border-border-light dark:border-border-dark bg-white/60 dark:bg-gray-900/40 p-2 overflow-x-auto custom-scrollbar flex items-center gap-2 whitespace-nowrap w-full"
-              data-ngram-selected-unicodes
+              data-pattern-selected-unicodes
             >
               —
             </div>
@@ -209,13 +209,13 @@
         </div>
         <div
           class="flex-1 rounded-2xl border border-border-light dark:border-border-dark bg-card-light/80 dark:bg-card-dark/80 shadow-inner relative overflow-hidden min-h-[420px] sm:min-h-[500px]"
-          data-ngram-image-wrapper
+          data-pattern-image-wrapper
         >
-          <div class="absolute inset-0 w-full h-full" data-ngram-image>
+          <div class="absolute inset-0 w-full h-full" data-pattern-image>
             <canvas
               class="absolute inset-0 w-full h-full"
-              data-ngram-canvas
-              aria-label="N-gram bounding boxes overlay"
+              data-pattern-canvas
+              aria-label="Pattern bounding boxes overlay"
             ></canvas>
           </div>
         </div>

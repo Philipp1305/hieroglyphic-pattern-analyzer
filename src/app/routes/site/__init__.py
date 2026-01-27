@@ -12,8 +12,8 @@ def render_page(template_name: str, **context):
 from . import errors  # noqa: E402,F401
 from . import home  # noqa: E402,F401
 from . import upload_page  # noqa: E402,F401
-from . import ngram  # noqa: E402,F401
-from . import suffix  # noqa: E402,F401
+from . import pattern  # noqa: E402,F401
+from . import structure  # noqa: E402,F401
 from . import overview  # noqa: E402,F401
 from . import sort_page  # noqa: E402,F401
 from . import collection  # noqa: E402,F401

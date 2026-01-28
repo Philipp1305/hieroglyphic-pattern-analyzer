@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple, TypedDict
 from flask import jsonify, request, current_app
 
 from . import bp
-from src.database.tools import delete, insert, select, update
+from src.database.tools import insert, select, update
 from src.sort import sort as run_sort_algorithm
 from src.app.services.pipeline_service import (
     STATUS_SORT_DONE,
@@ -13,6 +13,7 @@ from src.app.services.pipeline_service import (
     start_analysis_async,
 )
 from src.app.services.status_service import change_image_status, ensure_status_code
+from src.cleanup import delete_existing_entries
 
 
 class ColumnEntry(TypedDict):
@@ -114,13 +115,8 @@ def apply_sorting_snapshot(image_id: int):
             for row_idx, glyph_id in enumerate(glyphs):
                 ordered_entries.append((glyph_id, mapped_col, row_idx))
 
-    delete(
-        """
-        DELETE FROM t_glyphes_sorted
-        WHERE id_glyph = ANY(%s)
-        """,
-        (list(valid_glyph_ids),),
-    )
+    delete_existing_entries(image_id, "ANALYSIS")
+    delete_existing_entries(image_id, "SORTING")
 
     if ordered_entries:
         insert(

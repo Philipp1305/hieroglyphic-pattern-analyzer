@@ -13,3 +13,4 @@ from . import sorting  # noqa: E402,F401
 from . import patterns  # noqa: E402,F401
 from . import sentences  # noqa: E402,F401
 from . import pattern_details  # noqa: E402,F401
+from . import glyphes  # noqa: E402,F401

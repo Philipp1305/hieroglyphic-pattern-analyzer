@@ -3,7 +3,7 @@ from __future__ import annotations
 from flask import request, current_app
 
 from ... import socketio
-from src.database.tools import delete, select, update
+from src.database.tools import select, update
 from src.ngram import run_ngram
 from src.app.services.pipeline_service import emit_pipeline_status
 
@@ -50,11 +50,6 @@ def start_patterns(payload=None):
             status="running",
         )
         current_app.logger.info("[ws_pattern] ANALYZE_START image_id=%s", image_id_int)
-        # Clear previous pattern results for idempotent runs.
-        delete(
-            "DELETE FROM T_NGRAM_PATTERN WHERE id_image = %s",
-            (image_id_int,),
-        )
 
         print(f"[ws_pattern] start_patterns image_id={image_id_int} starting")
         counts = run_ngram(image_id_int)

@@ -106,7 +106,9 @@
           class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-6 shadow-lg lg:col-span-3"
         >
           <div class="grid gap-4 md:grid-cols-4">
-            {% set sort_disabled = not image_id %} {% set patterns_disabled = not image_id %} {% set structure_disabled = not image_id %} {% set glyphs_disabled = not image_id %}
+            {% set sort_disabled = not image_id %} {% set patterns_disabled =
+            not image_id %} {% set structure_disabled = not image_id %} {% set
+            glyphs_disabled = not image_id %}
             <div
               class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark/70 p-5 flex h-full flex-col gap-4 {% if sort_disabled %}opacity-70{% else %}hover:border-primary transition{% endif %}"
               data-action-card="sort"
@@ -246,8 +248,8 @@
               </p>
               <div class="mt-auto flex justify-end">
                 <a
-                  href="{% if patterns_disabled %}#{% else %}{{ url_for('site.pattern_page', id=image_id) }}{% endif %}"
-                  class="inline-flex items-center justify-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold bg-transparent text-text-secondary-light dark:text-text-secondary-dark border-border-light dark:border-border-dark hover:border-primary hover:text-primary pointer-events-none opacity-60 cursor-not-allowed border-dashed"
+                  href="{% if patterns_disabled %}#{% else %}{{ url_for('site.glyphes', id=image_id) }}{% endif %}"
+                  class="inline-flex items-center justify-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold bg-transparent text-text-secondary-light dark:text-text-secondary-dark border-border-light dark:border-border-dark hover:border-primary hover:text-primary {% if patterns_disabled %}pointer-events-none opacity-60 cursor-not-allowed border-dashed{% endif %}"
                   aria-disabled="{{ 'true' if patterns_disabled else 'false' }}"
                   data-action-button
                 >

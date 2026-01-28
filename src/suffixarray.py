@@ -6,7 +6,7 @@ from typing import Sequence
 import psycopg2.extras
 
 from src.database.connect import connect
-from src.database.tools import insert, select, delete
+from src.database.tools import insert, select
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
@@ -215,9 +215,8 @@ def persist_suffixarray_patterns(
     occurrences: dict[tuple[int, ...], list[int]],
     glyph_ids: Sequence[int],
 ) -> None:
-    
     patterns = list(occurrences.items())
-    
+
     if not patterns:
         return
 
@@ -252,19 +251,19 @@ def persist_suffixarray_patterns(
             (image_id, len(patterns)),
         )
         pattern_data = cur.fetchall()
-        
+
         # Build a map from gardiner_ids to pattern_id
         gardiner_to_id = {tuple(row[1]): row[0] for row in pattern_data}
-        
+
         occurrence_rows: list[tuple[int, list[int]]] = []
-        for (pattern, starts), in zip(patterns):
+        for ((pattern, starts),) in zip(patterns):
             pattern_tuple = tuple(pattern)
             pattern_id = gardiner_to_id.get(pattern_tuple)
-            
+
             if pattern_id is None:
                 print(f"Warning: Could not find pattern {pattern}")
                 continue
-                
+
             pat_len = len(pattern)
             for start in starts:
                 occurrence_rows.append(
@@ -395,35 +394,6 @@ def run_suffixarray(
     )
 
     if occurrences:
-        # Delete existing patterns for this image to avoid duplicates
-        delete(
-            """
-            DELETE FROM T_SUFFIXARRAY_OCCURENCES
-            WHERE id_pattern IN (
-                SELECT id FROM T_SUFFIXARRAY_PATTERNS WHERE id_image = %s
-            )
-            """,
-            (image_id,),
-        )
-        delete(
-            """
-            DELETE FROM T_SUFFIXARRAY_PATTERNS WHERE id_image = %s
-            """,
-            (image_id,),
-        )
-        delete(
-            """
-            DELETE FROM T_SUFFIXARRAY_OCCURENCES_BBOXES
-            WHERE id_occ IN (
-                SELECT occ.id
-                FROM T_SUFFIXARRAY_OCCURENCES AS occ
-                LEFT JOIN T_SUFFIXARRAY_PATTERNS AS pat ON pat.id = occ.id_pattern
-                WHERE pat.id_image = %s
-            )
-            """,
-            (image_id,),
-        )
-
         persist_suffixarray_patterns(image_id, occurrences, glyph_ids)
         store_occurrence_bboxes(image_id)
 

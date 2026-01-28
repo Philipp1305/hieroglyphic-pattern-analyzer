@@ -8,6 +8,11 @@ import psycopg2
 from flask import current_app, jsonify, request
 from psycopg2.extras import Json
 from src.database.tools import insert
+from src.app.services.pipeline_service import (
+    STATUS_UPLOAD_DONE,
+    start_pipeline_async,
+)
+from src.app.services.status_service import ensure_status_code
 from . import bp
 
 
@@ -36,7 +41,7 @@ def upload_papyrus():
             sort_tolerance = int(sort_tolerance_raw) if sort_tolerance_raw else 100
         except ValueError:
             sort_tolerance = 100
-        id_status = 1
+        id_status = ensure_status_code(STATUS_UPLOAD_DONE, "Upload done")
 
         image_file = request.files.get("papyrus_image_file")
         json_file = request.files.get("annotation_json_file")
@@ -78,6 +83,10 @@ def upload_papyrus():
             sort_tolerance,
         )
         new_id = insert(sql, params)
+
+        # Fire-and-forget pipeline with app context
+        start_pipeline_async(new_id, current_app._get_current_object())  # type: ignore[attr-defined]
+
         return jsonify({"status": "success", "id": new_id})
 
     except Exception as exc:

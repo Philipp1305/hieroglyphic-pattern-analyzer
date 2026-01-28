@@ -1,0 +1,99 @@
+from __future__ import annotations
+
+from flask import request, current_app
+
+from ... import socketio
+from src.database.tools import select, update
+from src.ngram import run_ngram
+from src.app.services.pipeline_service import emit_pipeline_status
+
+
+def _emit_to_request(event: str, payload: dict) -> None:
+    sid = getattr(request, "sid", None)
+    if sid:
+        socketio.emit(event, payload, to=sid)
+    else:
+        socketio.emit(event, payload)
+
+
+@socketio.on("c2s:start_patterns")
+def start_patterns(payload=None):
+    print(f"[ws_pattern] c2s:start_patterns payload={payload}")
+    if isinstance(payload, dict):
+        image_id = payload.get("image_id")
+    else:
+        image_id = payload
+
+    if not image_id:
+        print("[ws_pattern] start_patterns missing image_id")
+        _emit_to_request(
+            "s2c:start_patterns:response",
+            {"status": "error", "message": "image_id is required"},
+        )
+        return
+
+    try:
+        image_id_int = int(image_id)
+    except (TypeError, ValueError):
+        print(f"[ws_pattern] start_patterns invalid image_id={image_id}")
+        _emit_to_request(
+            "s2c:start_patterns:response",
+            {"status": "error", "message": "image_id must be an integer"},
+        )
+        return
+
+    try:
+        emit_pipeline_status(
+            image_id_int,
+            "ANALYZE_START",
+            current_app._get_current_object(),  # type: ignore[attr-defined]
+            status="running",
+        )
+        current_app.logger.info("[ws_pattern] ANALYZE_START image_id=%s", image_id_int)
+
+        print(f"[ws_pattern] start_patterns image_id={image_id_int} starting")
+        counts = run_ngram(image_id_int)
+        patterns = len(counts)
+        occurrences = sum(counts.values())
+        print(
+            f"[ws_pattern] start_patterns completed patterns={patterns} occurrences={occurrences}"
+        )
+        current_app.logger.info(
+            "[ws_pattern] ANALYZE_DONE image_id=%s patterns=%s occurrences=%s",
+            image_id_int,
+            patterns,
+            occurrences,
+        )
+
+        status_rows = select(
+            "SELECT id FROM T_IMAGES_STATUS WHERE status_code = %s", ("NGRAMS",)
+        )
+        if status_rows:
+            status_id = status_rows[0][0]
+            update(
+                "UPDATE T_IMAGES SET id_status = %s WHERE id = %s",
+                (status_id, image_id_int),
+            )
+            print(f"[ws_pattern] start_patterns updated status_id={status_id}")
+        else:
+            print("[ws_pattern] start_patterns missing NGRAMS status code")
+
+        emit_pipeline_status(
+            image_id_int,
+            "ANALYZE_DONE",
+            current_app._get_current_object(),  # type: ignore[attr-defined]
+            status="success",
+            extra={"patterns": patterns, "occurrences": occurrences},
+        )
+    except Exception as exc:
+        print(f"[ws_pattern] start_patterns error={exc}")
+        current_app.logger.exception(
+            "[ws_pattern] ANALYZE_ERROR image_id=%s", image_id_int
+        )
+        emit_pipeline_status(
+            image_id_int,
+            "ANALYZE_ERROR",
+            current_app._get_current_object(),  # type: ignore[attr-defined]
+            status="error",
+            extra={"message": str(exc)},
+        )

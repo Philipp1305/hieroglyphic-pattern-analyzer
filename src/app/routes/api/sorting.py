@@ -2,11 +2,18 @@ from __future__ import annotations
 
 from typing import Dict, List, Tuple, TypedDict
 
-from flask import jsonify, request
+from flask import jsonify, request, current_app
 
 from . import bp
-from src.database.tools import delete, insert, select, update
+from src.database.tools import insert, select, update
 from src.sort import sort as run_sort_algorithm
+from src.app.services.pipeline_service import (
+    STATUS_SORT_DONE,
+    emit_pipeline_status,
+    start_analysis_async,
+)
+from src.app.services.status_service import change_image_status, ensure_status_code
+from src.cleanup import delete_existing_entries
 
 
 class ColumnEntry(TypedDict):
@@ -82,9 +89,6 @@ def apply_sorting_snapshot(image_id: int):
             return {"error": "col must be a non-negative integer"}, 400
         if not isinstance(glyph_ids, list):
             return {"error": "glyph_ids must be a list"}, 400
-        if col_idx == 0:
-            # Drop column 0 entirely
-            continue
         glyph_list: list[int] = []
         for glyph_id in glyph_ids:
             if not isinstance(glyph_id, int):
@@ -111,13 +115,8 @@ def apply_sorting_snapshot(image_id: int):
             for row_idx, glyph_id in enumerate(glyphs):
                 ordered_entries.append((glyph_id, mapped_col, row_idx))
 
-    delete(
-        """
-        DELETE FROM t_glyphes_sorted
-        WHERE id_glyph = ANY(%s)
-        """,
-        (list(valid_glyph_ids),),
-    )
+    delete_existing_entries(image_id, "ANALYSIS")
+    delete_existing_entries(image_id, "SORTING")
 
     if ordered_entries:
         insert(
@@ -137,15 +136,28 @@ def apply_sorting_snapshot(image_id: int):
 
     status_updated = False
     if advance_status:
-        current_status_code = _current_status_code(image_id)
-        if current_status_code and current_status_code.upper() == "SORT_VALIDATE":
-            target_status_id = _status_id_by_code("SORT")
-            if target_status_id is not None:
-                update(
-                    "UPDATE t_images SET id_status = %s WHERE id = %s",
-                    (target_status_id, image_id),
-                )
-                status_updated = True
+        ensure_status_code(STATUS_SORT_DONE, "Sorting done")
+        change_image_status(image_id, STATUS_SORT_DONE)
+        status_updated = True
+        try:
+            emit_pipeline_status(
+                image_id,
+                STATUS_SORT_DONE,
+                current_app._get_current_object(),  # type: ignore[attr-defined]
+                status="success",
+            )
+        except Exception:
+            pass
+        try:
+            start_analysis_async(
+                image_id,
+                current_app._get_current_object(),  # type: ignore[attr-defined]
+            )
+        except Exception as exc:  # pragma: no cover - safety net
+            try:
+                current_app.logger.exception("failed to start analysis", exc_info=exc)
+            except Exception:
+                pass
 
     return jsonify(
         {

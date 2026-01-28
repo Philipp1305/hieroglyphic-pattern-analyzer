@@ -9,9 +9,9 @@
       class="bg-gradient-to-b from-card-light/60 to-transparent dark:from-card-dark/40"
     >
       <div
-        class="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-10 sm:px-6 lg:grid-cols-3 lg:px-8"
+        class="mx-auto grid max-w-7xl grid-cols-1 gap-5 px-4 py-4 sm:px-4 lg:grid-cols-3 lg:px-8"
       >
-        <div class="flex flex-col gap-6 lg:col-span-2">
+        <div class="flex flex-col gap-4 lg:col-span-2">
           <div
             class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-6 shadow-lg"
           >
@@ -73,7 +73,7 @@
             </div>
           </div>
         </div>
-        <aside class="flex flex-col gap-6 lg:sticky lg:top-4 h-full">
+        <aside class="flex flex-col gap-6 lg:top-4 h-full">
           <div
             class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark shadow-lg overflow-hidden h-full flex flex-col"
           >
@@ -105,9 +105,10 @@
         <div
           class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark p-6 shadow-lg lg:col-span-3"
         >
-          <div class="grid gap-4 md:grid-cols-3">
-            {% set sort_disabled = not image_id %} {% set ngrams_disabled = not
-            image_id %}
+          <div class="grid gap-4 md:grid-cols-4">
+            {% set sort_disabled = not image_id %} {% set patterns_disabled =
+            not image_id %} {% set structure_disabled = not image_id %} {% set
+            glyphs_disabled = not image_id %}
             <div
               class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark/70 p-5 flex h-full flex-col gap-4 {% if sort_disabled %}opacity-70{% else %}hover:border-primary transition{% endif %}"
               data-action-card="sort"
@@ -147,7 +148,7 @@
             </div>
             <div
               class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark/70 p-5 flex h-full flex-col gap-4 cursor-not-allowed"
-              data-action-card="ngrams"
+              data-action-card="patterns"
             >
               <div
                 class="flex items-center justify-between text-xs font-semibold uppercase tracking-wide"
@@ -155,7 +156,7 @@
                 <p
                   class="text-text-secondary-light dark:text-text-secondary-dark"
                 >
-                  View N-Grams
+                  Pattern Analysis
                 </p>
                 <span
                   class="rounded-full bg-border-light px-2 py-1 text-text-secondary-light text-[10px] dark:bg-border-dark"
@@ -166,26 +167,26 @@
               <p
                 class="text-sm text-text-secondary-light dark:text-text-secondary-dark"
               >
-                Analyses the most frequent glyph sequences and displays N-grams
+                Analyses the most frequent glyph sequences and displays patterns
                 by length.
               </p>
               <div class="mt-auto flex justify-end">
                 <a
-                  href="{% if ngrams_disabled %}#{% else %}{{ url_for('site.ngrams_page', id=image_id) }}{% endif %}"
+                  href="{% if patterns_disabled %}#{% else %}{{ url_for('site.pattern_page', id=image_id) }}{% endif %}"
                   class="inline-flex items-center justify-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold bg-transparent text-text-secondary-light dark:text-text-secondary-dark border-border-light dark:border-border-dark hover:border-primary hover:text-primary pointer-events-none opacity-60 cursor-not-allowed border-dashed"
-                  aria-disabled="{{ 'true' if ngrams_disabled else 'false' }}"
+                  aria-disabled="{{ 'true' if patterns_disabled else 'false' }}"
                   data-action-button
                 >
                   <span class="material-symbols-outlined text-base"
                     >dataset</span
                   >
-                  View N-Grams
+                  View Patterns
                 </a>
               </div>
             </div>
             <div
               class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark/70 p-5 flex h-full flex-col gap-4 cursor-not-allowed"
-              data-action-card="suffix"
+              data-action-card="structure"
             >
               <div
                 class="flex items-center justify-between text-xs font-semibold uppercase tracking-wide"
@@ -193,7 +194,7 @@
                 <p
                   class="text-text-secondary-light dark:text-text-secondary-dark"
                 >
-                  View Suffix Tree
+                  Structural Analysis
                 </p>
                 <span
                   class="rounded-full bg-border-light px-2 py-1 text-text-secondary-light text-[10px] dark:bg-border-dark"
@@ -208,17 +209,55 @@
                 textual variants.
               </p>
               <div class="mt-auto flex justify-end">
-                <button
-                  type="button"
-                  class="pointer-events-none inline-flex items-center justify-center gap-2 rounded-full border border-border-light dark:border-border-dark px-5 py-3 text-sm font-semibold text-text-secondary-light dark:text-text-secondary-dark opacity-60 cursor-not-allowed border-dashed"
-                  aria-disabled="true"
+                <a
+                  href="{% if structure_disabled %}#{% else %}{{ url_for('site.structure', id=image_id) }}{% endif %}"
+                  class="inline-flex items-center justify-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold bg-transparent text-text-secondary-light dark:text-text-secondary-dark border-border-light dark:border-border-dark hover:border-primary hover:text-primary pointer-events-none opacity-60 cursor-not-allowed border-dashed"
+                  aria-disabled="{{ 'true' if structure_disabled else 'false' }}"
                   data-action-button
                 >
                   <span class="material-symbols-outlined text-base"
                     >account_tree</span
                   >
-                  View Suffix Tree
-                </button>
+                  View Structural Analysis
+                </a>
+              </div>
+            </div>
+            <div
+              class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark/70 p-5 flex h-full flex-col gap-4 cursor-not-allowed"
+              data-action-card="glyphs"
+            >
+              <div
+                class="flex items-center justify-between text-xs font-semibold uppercase tracking-wide"
+              >
+                <p
+                  class="text-text-secondary-light dark:text-text-secondary-dark"
+                >
+                  Glyph Analysis
+                </p>
+                <span
+                  class="rounded-full bg-border-light px-2 py-1 text-text-secondary-light text-[10px] dark:bg-border-dark"
+                  data-action-badge
+                  >Locked</span
+                >
+              </div>
+              <p
+                class="text-sm text-text-secondary-light dark:text-text-secondary-dark"
+              >
+                Analyses the most frequent glyph sequences and displays patterns
+                by length.
+              </p>
+              <div class="mt-auto flex justify-end">
+                <a
+                  href="{% if patterns_disabled %}#{% else %}{{ url_for('site.glyphes', id=image_id) }}{% endif %}"
+                  class="inline-flex items-center justify-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold bg-transparent text-text-secondary-light dark:text-text-secondary-dark border-border-light dark:border-border-dark hover:border-primary hover:text-primary {% if patterns_disabled %}pointer-events-none opacity-60 cursor-not-allowed border-dashed{% endif %}"
+                  aria-disabled="{{ 'true' if patterns_disabled else 'false' }}"
+                  data-action-button
+                >
+                  <span class="material-symbols-outlined text-base"
+                    >dataset</span
+                  >
+                  View Glyph Analysis
+                </a>
               </div>
             </div>
           </div>

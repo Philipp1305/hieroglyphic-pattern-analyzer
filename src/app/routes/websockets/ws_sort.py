@@ -1,9 +1,11 @@
-from flask import request
+from flask import request, current_app
 
 from ... import socketio
 from src.database.tools import select, update
 from src.process_image import process_image
 from src.sort import run_sort
+from src.app.services.status_service import ensure_status_code
+from src.app.services.pipeline_service import emit_pipeline_status
 
 
 def _emit_to_request(event: str, payload: dict) -> None:
@@ -40,6 +42,20 @@ def start_sorting(payload=None, tolerance=100):
         tolerance_value = 100
 
     try:
+        status_start_id = ensure_status_code("SORT_START", "Sorting started")
+        update(
+            "UPDATE T_IMAGES SET id_status = %s WHERE id = %s",
+            (status_start_id, image_id),
+        )
+        current_app.logger.info(
+            "[ws_sort] SORT_START image_id=%s tol=%s", image_id, tolerance_value
+        )
+        emit_pipeline_status(
+            image_id,
+            "SORT_START",
+            current_app._get_current_object(),  # type: ignore[attr-defined]
+            status="running",
+        )
         rows = select(
             "SELECT reading_direction FROM T_IMAGES WHERE id = %s", (image_id,)
         )
@@ -51,17 +67,25 @@ def start_sorting(payload=None, tolerance=100):
         )
         count, _ = run_sort(int(image_id), tolerance_value, reading_direction)
         print(f"[ws_sort] start_sorting sorted={count}")
-
-        status_rows = select(
-            "SELECT id FROM T_IMAGES_STATUS WHERE status_code = %s", ("SORT_VALIDATE",)
+        current_app.logger.info(
+            "[ws_sort] SORT_VALIDATE image_id=%s sorted=%s", image_id, count
         )
-        if status_rows:
-            status_id = status_rows[0][0]
-            update(
-                "UPDATE T_IMAGES SET id_status = %s WHERE id = %s",
-                (status_id, image_id),
-            )
-            print(f"[ws_sort] start_sorting updated status_id={status_id}")
+
+        status_validate_id = ensure_status_code(
+            "SORT_VALIDATE", "Sorting needs validation"
+        )
+        update(
+            "UPDATE T_IMAGES SET id_status = %s WHERE id = %s",
+            (status_validate_id, image_id),
+        )
+        print(f"[ws_sort] start_sorting updated status_id={status_validate_id}")
+        emit_pipeline_status(
+            image_id,
+            "SORT_VALIDATE",
+            current_app._get_current_object(),  # type: ignore[attr-defined]
+            status="success",
+            extra={"sorted": count},
+        )
 
         _emit_to_request(
             "s2c:start_sorting:response",
@@ -101,26 +125,42 @@ def start_processing(payload=None):
         return
 
     try:
-        print(f"[ws_sort] process_image image_id={image_id} starting")
-        count = process_image(int(image_id))
-        print(f"[ws_sort] process_image inserted={count}")
-        status_rows = select(
-            "SELECT id FROM T_IMAGES_STATUS WHERE status_code = %s", ("JSON",)
+        status_start_id = ensure_status_code("JSON_START", "JSON processing started")
+        update(
+            "UPDATE T_IMAGES SET id_status = %s WHERE id = %s",
+            (status_start_id, image_id),
         )
-        if status_rows:
-            status_id = status_rows[0][0]
-            update(
-                "UPDATE T_IMAGES SET id_status = %s WHERE id = %s",
-                (status_id, image_id),
-            )
-            print(f"[ws_sort] process_image updated status_id={status_id}")
+        emit_pipeline_status(
+            image_id,
+            "JSON_START",
+            current_app._get_current_object(),  # type: ignore[attr-defined]
+            status="running",
+        )
+        current_app.logger.info("[ws_sort] JSON_START image_id=%s", image_id)
+        count = process_image(int(image_id))
+        current_app.logger.info(
+            "[ws_sort] JSON_DONE image_id=%s processed=%s", image_id, count
+        )
+        status_done_id = ensure_status_code("JSON_DONE", "JSON processed")
+        update(
+            "UPDATE T_IMAGES SET id_status = %s WHERE id = %s",
+            (status_done_id, image_id),
+        )
+        print(f"[ws_sort] process_image updated status_id={status_done_id}")
+        emit_pipeline_status(
+            image_id,
+            "JSON_DONE",
+            current_app._get_current_object(),  # type: ignore[attr-defined]
+            status="success",
+            extra={"processed": count},
+        )
 
         _emit_to_request(
             "s2c:process_image:response",
             {
                 "image_id": image_id,
                 "status": "success",
-                "status_code": "JSON",
+                "status_code": "JSON_DONE",
                 "processed": count,
             },
         )

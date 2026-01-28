@@ -6,7 +6,7 @@ from src.database.tools import select
 from src.sentence_lookup_db import lookup_all
 
 from . import bp
-from .ngrams import (
+from .patterns import (
     _gardiner_map_for_ids,
     _normalize_gardiner_code,
     _normalize_unicode,

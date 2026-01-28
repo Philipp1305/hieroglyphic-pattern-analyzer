@@ -5,8 +5,7 @@ from flask import request
 from . import bp, render_page
 
 
-@bp.route("/suffixes", endpoint="suffix_page")
-@bp.route("/suffix", endpoint="suffix_page_alt")
+@bp.route("/structure", endpoint="structure")
 def view_suffix_page():
     image_id = request.args.get("id", type=int)
-    return render_page("pages/suffix.html", image_id=image_id)
+    return render_page("pages/structure.html", image_id=image_id)

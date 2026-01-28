@@ -1,0 +1,362 @@
+<div
+  class="flex h-screen flex-col bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark"
+  data-glyph-root
+  data-image-id="{{ image_id or '' }}"
+>
+  <header
+    class="w-full border-b border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark h-16"
+  >
+    <div
+      class="grid h-full w-full grid-cols-3 items-center px-4 sm:px-6 lg:px-8"
+    >
+      <div class="flex justify-start gap-2">
+        <a
+          href="{% if image_id %}{{ url_for('site.overview', id=image_id) }}{% else %}{{ url_for('site.overview') }}{% endif %}"
+          class="inline-flex items-center gap-2 rounded-full border border-border-light dark:border-border-dark px-4 py-2 text-sm font-semibold transition-colors hover:border-primary hover:text-primary"
+        >
+          <span class="material-symbols-outlined text-base">arrow_back</span>
+          Back to overview
+        </a>
+        <a
+          href="{{ url_for('site.home') }}"
+          class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border-light dark:border-border-dark text-text-light dark:text-text-dark transition-colors hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          aria-label="Home"
+          title="Home"
+        >
+          <span class="material-symbols-outlined text-xl leading-none"
+            >home</span
+          >
+        </a>
+        <a
+          href="{{ url_for('site.collection') }}"
+          class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border-light dark:border-border-dark text-text-light dark:text-text-dark transition-colors hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          aria-label="Collection"
+          title="Collection"
+        >
+          <span class="material-symbols-outlined text-xl leading-none"
+            >apps</span
+          >
+        </a>
+      </div>
+      <div class="flex items-center justify-center gap-3">
+        <div class="size-8"></div>
+        <h2
+          class="text-2xl font-bold text-primary leading-tight tracking-[-0.015em] select-none"
+          style="font-family: &quot;Caesar Dressing&quot;, cursive"
+        >
+          GlyPat
+        </h2>
+      </div>
+      <div class="flex items-center justify-end">
+        <button
+          id="themeToggle"
+          type="button"
+          class="inline-flex items-center justify-center rounded-full border border-border-light dark:border-border-dark p-2 text-text-light dark:text-text-dark transition-colors hover:border-primary hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          aria-pressed="false"
+        >
+          <span class="sr-only">Toggle color theme</span>
+          <span
+            class="material-symbols-outlined text-xl leading-none dark:hidden"
+            >dark_mode</span
+          >
+          <span
+            class="material-symbols-outlined hidden text-xl leading-none dark:inline"
+            >light_mode</span
+          >
+        </button>
+      </div>
+    </div>
+  </header>
+  <main class="flex-1 overflow-hidden min-h-0">
+    <div class="relative flex h-full flex-col gap-3 lg:flex-row lg:gap-0">
+      <div
+        class="absolute inset-0 z-30 hidden flex items-center justify-center bg-background-light/85 dark:bg-background-dark/80 backdrop-blur-sm"
+        data-glyph-loading
+      >
+        <div
+          class="flex flex-col items-center gap-3 text-text-secondary-light dark:text-text-secondary-dark"
+        >
+          <div class="relative flex h-12 w-12" data-glyph-loading-spinner>
+            <span
+              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
+            ></span>
+            <span
+              class="relative inline-flex h-12 w-12 rounded-full bg-primary/70"
+            ></span>
+          </div>
+          <p
+            class="text-sm font-semibold tracking-wide uppercase"
+            data-glyph-loading-text
+          >
+            Load glyphes...
+          </p>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <aside
+        class="w-full lg:w-[360px] lg:flex-shrink-0 border-border-light dark:border-border-dark lg:border-r bg-card-light/90 dark:bg-card-dark/80 backdrop-blur flex flex-col min-h-0 overflow-hidden"
+      >
+        <div
+          class="p-4 border-b border-gray-200 dark:border-gray-700 space-y-3"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+              Glyph Analysis
+            </h2>
+            <span
+              class="text-[11px] font-semibold rounded-full px-3 py-1 bg-primary/10 text-primary"
+              data-glyph-total
+              title="Anzahl unterschiedlicher Glyphen im Bild"
+              >0 glyphes</span
+            >
+          </div>
+          <label class="flex flex-col min-w-40 h-11 w-full">
+            <div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+              <div
+                class="text-gray-500 dark:text-gray-400 flex bg-gray-100 dark:bg-gray-800 items-center justify-center pl-3 rounded-l-lg border-r-0"
+              >
+                <span class="material-symbols-outlined" style="font-size: 20px"
+                  >search</span
+                >
+              </div>
+              <input
+                class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border-none bg-gray-100 dark:bg-gray-800 focus:border-none h-full placeholder:text-gray-500 dark:placeholder:text-gray-400 px-4 pl-2 text-sm font-normal"
+                placeholder="Filter by Gardiner code…"
+                value=""
+                data-glyph-search
+              />
+            </div>
+          </label>
+        </div>
+        <div class="relative flex-1 min-h-[260px] overflow-hidden">
+          <div
+            class="absolute inset-0 hidden items-center justify-center text-sm text-text-secondary-light dark:text-text-secondary-dark px-4 text-center"
+            data-glyph-empty
+          >
+            <p class="p-4">No glyphs found.</p>
+          </div>
+          <div
+            class="h-full overflow-y-auto p-3 space-y-2 custom-scrollbar"
+            data-glyph-list
+          ></div>
+        </div>
+      </aside>
+
+      <!-- Main content -->
+      <section
+        class="relative flex-1 bg-background-light dark:bg-background-dark p-4 flex flex-col gap-4 min-h-0 min-w-0 overflow-hidden"
+      >
+        <div class="flex-1 min-h-0">
+          <div
+            class="grid gap-4 xl:grid-cols-2 auto-rows-[minmax(320px,1fr)] h-full overflow-auto pr-1 custom-scrollbar"
+          >
+            <!-- Minimap -->
+            <article
+              class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light/80 dark:bg-card-dark/80 shadow-inner relative overflow-hidden min-h-[320px]"
+            >
+              <div
+                class="relative z-10 flex items-center justify-between px-4 py-3 border-b border-border-light dark:border-border-dark bg-card-light/90 dark:bg-card-dark/90"
+              >
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary"
+                    >photo</span
+                  >
+                  <h3 class="font-bold">Minimap</h3>
+                </div>
+                <div
+                  class="text-xs text-text-secondary-light dark:text-text-secondary-dark"
+                  data-glyph-minimap-count
+                >
+                  —
+                </div>
+              </div>
+              <div
+                class="absolute inset-x-0 bottom-0 top-14 w-full h-[calc(100%-56px)]"
+                data-glyph-image
+              >
+                <canvas
+                  class="absolute inset-0 w-full h-full cursor-move"
+                  data-glyph-canvas
+                  aria-label="Glyph bounding boxes overlay"
+                ></canvas>
+              </div>
+            </article>
+
+            <!-- Transitions -->
+            <article
+              class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light/90 dark:bg-card-dark/85 shadow-sm flex flex-col gap-0 h-full overflow-hidden"
+            >
+              <div
+                class="relative z-10 flex items-center justify-between px-4 py-3 border-b border-border-light dark:border-border-dark bg-card-light/90 dark:bg-card-dark/90"
+              >
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary"
+                    >swap_horiz</span
+                  >
+                  <h3 class="font-bold">Transitions</h3>
+                </div>
+              </div>
+              <div
+                class="p-4 grid grid-cols-2 gap-4 overflow-hidden min-h-0 flex-1"
+              >
+                <div class="space-y-2 min-h-0 h-full flex flex-col">
+                  <p
+                    class="text-sm font-semibold text-text-secondary-light dark:text-text-secondary-dark"
+                  >
+                    Previous
+                  </p>
+                  <div
+                    class="space-y-1 flex-1 overflow-auto custom-scrollbar"
+                    data-glyph-prev-list
+                  ></div>
+                </div>
+                <div class="space-y-2 min-h-0 h-full flex flex-col">
+                  <p
+                    class="text-sm font-semibold text-text-secondary-light dark:text-text-secondary-dark"
+                  >
+                    Following
+                  </p>
+                  <div
+                    class="space-y-1 flex-1 overflow-auto custom-scrollbar"
+                    data-glyph-next-list
+                  ></div>
+                </div>
+              </div>
+            </article>
+
+            <!-- Word position stats -->
+            <article
+              class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light/90 dark:bg-card-dark/85 shadow-sm flex flex-col gap-0 overflow-hidden"
+            >
+              <div
+                class="relative z-10 flex items-center justify-between px-4 py-3 border-b border-border-light dark:border-border-dark bg-card-light/90 dark:bg-card-dark/90 rounded-t-2xl"
+              >
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary"
+                    >stacked_bar_chart</span
+                  >
+                  <h3 class="font-bold">Word Position Stats</h3>
+                </div>
+              </div>
+              <div class="p-4 grid grid-cols-3 gap-3 text-sm">
+                <div class="space-y-1">
+                  <div class="flex items-center justify-between">
+                    <span>Start</span>
+                    <span data-glyph-pos-start-val>—</span>
+                  </div>
+                  <div
+                    class="h-2 rounded-full bg-border-light dark:bg-border-dark"
+                  >
+                    <div
+                      class="h-full rounded-full bg-primary transition-all"
+                      data-glyph-pos-start-bar
+                      style="width: 0%"
+                    ></div>
+                  </div>
+                </div>
+                <div class="space-y-1">
+                  <div class="flex items-center justify-between">
+                    <span>Middle</span>
+                    <span data-glyph-pos-mid-val>—</span>
+                  </div>
+                  <div
+                    class="h-2 rounded-full bg-border-light dark:bg-border-dark"
+                  >
+                    <div
+                      class="h-full rounded-full bg-amber-500 transition-all"
+                      data-glyph-pos-mid-bar
+                      style="width: 0%"
+                    ></div>
+                  </div>
+                </div>
+                <div class="space-y-1">
+                  <div class="flex items-center justify-between">
+                    <span>End</span>
+                    <span data-glyph-pos-end-val>—</span>
+                  </div>
+                  <div
+                    class="h-2 rounded-full bg-border-light dark:bg-border-dark"
+                  >
+                    <div
+                      class="h-full rounded-full bg-emerald-500 transition-all"
+                      data-glyph-pos-end-bar
+                      style="width: 0%"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+              <div class="px-4 pb-4 flex flex-col gap-3 min-h-[220px]">
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <div
+                    class="rounded-lg bg-card-light/70 dark:bg-card-dark/70 px-3 py-2"
+                  >
+                    <span
+                      class="font-semibold text-text-secondary-light dark:text-text-secondary-dark"
+                      >Median:</span
+                    >
+                    <span data-glyph-pos-median>—</span>
+                  </div>
+                  <div
+                    class="rounded-lg bg-card-light/70 dark:bg-card-dark/70 px-3 py-2"
+                  >
+                    <span
+                      class="font-semibold text-text-secondary-light dark:text-text-secondary-dark"
+                      >Spread:</span
+                    >
+                    <span data-glyph-pos-std>—</span>
+                  </div>
+                </div>
+
+                <div class="flex flex-col gap-2 flex-1">
+                  <div
+                    class="flex items-center justify-between text-xs text-text-secondary-light dark:text-text-secondary-dark"
+                  >
+                    <span>Position histogram</span>
+                    <span class="text-[11px]" data-glyph-pos-binlabel></span>
+                  </div>
+                  <div
+                    class="flex-1 h-48 grid grid-cols-12 items-stretch gap-1 rounded-lg border border-dashed border-border-light dark:border-border-dark bg-white/60 dark:bg-gray-900/50 p-3"
+                    data-glyph-pos-histogram
+                  >
+                    <!-- bars injected by script: set height via inline style -->
+                  </div>
+                </div>
+              </div>
+              <p
+                class="text-xs text-text-secondary-light dark:text-text-secondary-dark leading-snug px-4 pb-4 gap-3"
+              >
+                Bars show how often this glyph appears across a word from start
+                (left) to end (right); higher bars mean more occurrences in that
+                segment. Median marks the middle tendency, spread shows how wide
+                the distribution is.
+              </p>
+            </article>
+
+            <!-- Typical contexts -->
+            <article
+              class="rounded-2xl border border-border-light dark:border-border-dark bg-card-light/90 dark:bg-card-dark/85 shadow-sm flex flex-col gap-0 h-full overflow-hidden"
+            >
+              <div
+                class="relative z-10 flex items-center justify-between px-4 py-3 border-b border-border-light dark:border-border-dark bg-card-light/90 dark:bg-card-dark/90"
+              >
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary"
+                    >auto_stories</span
+                  >
+                  <h3 class="font-bold">Patterns containing glyph</h3>
+                </div>
+              </div>
+              <div class="p-4 space-y-2 overflow-hidden flex-1 flex flex-col">
+                <div
+                  class="space-y-2 flex-1 overflow-auto custom-scrollbar"
+                  data-glyph-context-list
+                ></div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>

@@ -1,25 +1,25 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const root = document.querySelector("[data-ngram-root]");
+  const root = document.querySelector("[data-pattern-root]");
   if (!root) {
     return;
   }
 
   const imageId = root.dataset.imageId;
-  const imageWrapper = root.querySelector("[data-ngram-image-wrapper]");
-  const imageCanvas = root.querySelector("[data-ngram-canvas]");
-  const loadingOverlay = root.querySelector("[data-ngram-loading]");
-  const loadingText = root.querySelector("[data-ngram-loading-text]");
-  const loadingSpinner = root.querySelector("[data-ngram-loading-spinner]");
+  const imageWrapper = root.querySelector("[data-pattern-image-wrapper]");
+  const imageCanvas = root.querySelector("[data-pattern-canvas]");
+  const loadingOverlay = root.querySelector("[data-pattern-loading]");
+  const loadingText = root.querySelector("[data-pattern-loading-text]");
+  const loadingSpinner = root.querySelector("[data-pattern-loading-spinner]");
 
-  const filterContainer = root.querySelector("[data-ngram-filters]");
-  const listContainer = root.querySelector("[data-ngram-list]");
-  const emptyState = root.querySelector("[data-ngram-empty]");
-  const searchInput = root.querySelector("[data-ngram-search]");
-  const selectedGlyphs = root.querySelector("[data-ngram-selected-glyphs]");
-  const selectedCodes = root.querySelector("[data-ngram-selected-unicodes]");
-  const selectedCount = root.querySelector("[data-ngram-selected-count]");
-  const selectedLength = root.querySelector("[data-ngram-selected-length]");
-  const viewDetailsLink = root.querySelector("[data-ngram-view-details]");
+  const filterContainer = root.querySelector("[data-pattern-filters]");
+  const listContainer = root.querySelector("[data-pattern-list]");
+  const emptyState = root.querySelector("[data-pattern-empty]");
+  const searchInput = root.querySelector("[data-pattern-search]");
+  const selectedGlyphs = root.querySelector("[data-pattern-selected-glyphs]");
+  const selectedCodes = root.querySelector("[data-pattern-selected-unicodes]");
+  const selectedCount = root.querySelector("[data-pattern-selected-count]");
+  const selectedLength = root.querySelector("[data-pattern-selected-length]");
+  const viewDetailsLink = root.querySelector("[data-pattern-view-details]");
   if (selectedGlyphs) {
     selectedGlyphs.style.fontFamily =
       "'Noto Sans Egyptian Hieroglyphs','Segoe UI Historic','Segoe UI Symbol','Noto Sans',sans-serif";
@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
   showOverlay(" Loading workspace…");
 
   loadImage(imageId);
-  loadNgrams(imageId);
+  loadPatterns(imageId);
 
   if (searchInput) {
     searchInput.addEventListener("input", (event) => {
@@ -143,7 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       })
       .catch((error) => {
-        console.error("[ngram] load image error", error);
+        console.error("[pattern] load image error", error);
         hasErrorOverlay = true;
         showOverlay("Image could not be loaded", { showSpinner: false });
         imageReady = true;
@@ -165,7 +165,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderBoundingBoxes();
     };
     img.onerror = () => {
-      console.error("[ngram] failed to load image");
+      console.error("[pattern] failed to load image");
       hasErrorOverlay = true;
       showOverlay("Image could not be loaded", { showSpinner: false });
       imageReady = true;
@@ -174,15 +174,15 @@ document.addEventListener("DOMContentLoaded", () => {
     img.src = src;
   }
 
-  function loadNgrams(id) {
+  function loadPatterns(id) {
     patternsReady = false;
-    const apiUrl = `/api/images/${encodeURIComponent(id)}/ngrams?_=${Date.now()}`;
+    const apiUrl = `/api/images/${encodeURIComponent(id)}/patterns?_=${Date.now()}`;
     setEmptyMessage("");
 
     fetch(apiUrl, { cache: "no-store" })
       .then((response) => {
         if (!response.ok) {
-          throw new Error("Failed to load N-grams");
+          throw new Error("Failed to load patterns");
         }
         return response.json();
       })
@@ -206,14 +206,14 @@ document.addEventListener("DOMContentLoaded", () => {
         markReadyAndMaybeHide();
       })
       .catch((error) => {
-        console.error("[ngram] load ngrams error", error);
+        console.error("[pattern] load patterns error", error);
         state.items = [];
         state.lengths = [];
         renderFilters();
         renderList();
-        setEmptyMessage("Failed to load N-grams.");
+        setEmptyMessage("Failed to load patterns.");
         hasErrorOverlay = true;
-        showOverlay("N-grams could not be loaded", { showSpinner: false });
+        showOverlay("Patterns could not be loaded", { showSpinner: false });
         patternsReady = true;
       })
       .finally(() => {
@@ -294,7 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
         (!isAll && Number(state.activeLength) === Number(option));
       const button = document.createElement("button");
       button.type = "button";
-      button.dataset.ngramFilter = String(option);
+      button.dataset.patternFilter = String(option);
       button.setAttribute("aria-pressed", isActive ? "true" : "false");
       button.className = [
         "flex h-7 cursor-pointer shrink-0 items-center justify-center gap-x-2 rounded-lg px-3 text-sm font-semibold leading-normal transition",
@@ -326,7 +326,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setEmptyMessage(
         hasData
           ? "No patterns match the current filters."
-          : "No N-grams available yet.",
+          : "No patterns available yet.",
       );
       state.selectedId = null;
       renderSelection();
@@ -375,7 +375,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateFilterCount(count) {
-    const counter = root.querySelector("[data-ngram-filter-count]");
+    const counter = root.querySelector("[data-pattern-filter-count]");
     if (counter) {
       counter.textContent = Number(count) || 0;
     }
@@ -385,7 +385,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const card = document.createElement("div");
     card.className =
       "p-3 rounded-lg border border-border-light dark:border-border-dark bg-white/80 dark:bg-gray-900/60 hover:border-primary/60 transition shadow-sm cursor-pointer";
-    card.dataset.ngramPattern = String(item.id);
+    card.dataset.patternId = String(item.id);
 
     const glyphText = document.createElement("div");
     glyphText.className =

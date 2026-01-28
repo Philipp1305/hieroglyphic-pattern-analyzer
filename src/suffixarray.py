@@ -215,9 +215,9 @@ def persist_suffixarray_patterns(
     occurrences: dict[tuple[int, ...], list[int]],
     glyph_ids: Sequence[int],
 ) -> None:
-    patterns = [
-        (pattern, starts) for pattern, starts in occurrences.items() if len(starts) > 1
-    ]
+    
+    patterns = list(occurrences.items())
+    
     if not patterns:
         return
 
@@ -229,20 +229,42 @@ def persist_suffixarray_patterns(
             for pattern, starts in patterns
         ]
 
+        # Insert patterns
         psycopg2.extras.execute_values(
             cur,
             """
             INSERT INTO T_SUFFIXARRAY_PATTERNS (id_image, gardiner_ids, sequence_length, sequence_count)
             VALUES %s
-            RETURNING id
             """,
             pattern_rows,
             page_size=100,
         )
-        pattern_ids = [row[0] for row in cur.fetchall()]
+        conn.commit()
 
+        # Fetch all pattern IDs for this image in the same order
+        cur.execute(
+            """
+            SELECT id, gardiner_ids FROM T_SUFFIXARRAY_PATTERNS 
+            WHERE id_image = %s 
+            ORDER BY id DESC 
+            LIMIT %s
+            """,
+            (image_id, len(patterns)),
+        )
+        pattern_data = cur.fetchall()
+        
+        # Build a map from gardiner_ids to pattern_id
+        gardiner_to_id = {tuple(row[1]): row[0] for row in pattern_data}
+        
         occurrence_rows: list[tuple[int, list[int]]] = []
-        for (pattern, starts), pattern_id in zip(patterns, pattern_ids):
+        for (pattern, starts), in zip(patterns):
+            pattern_tuple = tuple(pattern)
+            pattern_id = gardiner_to_id.get(pattern_tuple)
+            
+            if pattern_id is None:
+                print(f"Warning: Could not find pattern {pattern}")
+                continue
+                
             pat_len = len(pattern)
             for start in starts:
                 occurrence_rows.append(

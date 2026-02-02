@@ -116,12 +116,103 @@ document.addEventListener("DOMContentLoaded", () => {
   loadImage(imageId);
   loadPatterns(imageId);
 
+  let searchTimer = null;
   if (searchInput) {
     searchInput.addEventListener("input", (event) => {
-      state.search = (event.target.value || "").toString().trim();
-      renderList();
+      const value = (event.target.value || "").toString().trim();
+      if (searchTimer) {
+        clearTimeout(searchTimer);
+      }
+      // tiny debounce to avoid heavy re-renders while typing
+      searchTimer = setTimeout(() => {
+        state.search = value;
+        renderList();
+      }, 80);
     });
   }
+
+  const normalizeCode = (code) =>
+    (code ?? "")
+      .toString()
+      .trim()
+      .toLowerCase();
+
+  const tokenizeSearch = (term) =>
+    (term || "")
+      .toString()
+      .toLowerCase()
+      .split(/[\s,;|]+/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+  const codeMatchesToken = (code, token) =>
+    normalizeCode(code).includes(token.toLowerCase());
+
+  const computeMatchScore = (item, tokens) => {
+    if (!tokens.length) {
+      return 1; // neutral score, preserve original ordering
+    }
+    const codes = Array.isArray(item?.lowerCodes)
+      ? item.lowerCodes.filter(Boolean)
+      : [];
+    if (!codes.length) {
+      return 0;
+    }
+
+    // Exact string match (fast path)
+    const label = item.lowerCodeString || codes.join(" ");
+    const query = tokens.join(" ");
+    if (label === query) {
+      return 100;
+    }
+
+    // Longest contiguous match of tokens against codes
+    let bestContig = 0;
+    for (let i = 0; i < codes.length; i += 1) {
+      let run = 0;
+      for (let j = 0; j < tokens.length && i + j < codes.length; j += 1) {
+        if (codes[i + j] === tokens[j]) {
+          run += 1;
+        } else {
+          break;
+        }
+      }
+      if (run > bestContig) {
+        bestContig = run;
+      }
+    }
+
+    // Subsequence match (tokens must appear in order, gaps allowed)
+    let subseq = 0;
+    let cursor = 0;
+    for (let k = 0; k < codes.length && cursor < tokens.length; k += 1) {
+      if (codes[k] === tokens[cursor]) {
+        subseq += 1;
+        cursor += 1;
+      }
+    }
+
+    // Allow single-token partial matches (legacy behaviour)
+    let partial = 0;
+    if (tokens.length === 1) {
+      partial = codes.some((code) => codeMatchesToken(code, tokens[0])) ? 1 : 0;
+    }
+
+    const coverage = subseq / tokens.length; // 0..1
+    const contigRatio = bestContig / tokens.length; // 0..1
+    const lengthAffinity =
+      tokens.length > 0
+        ? 1 - Math.min(Math.abs(codes.length - tokens.length) / (codes.length + tokens.length), 1)
+        : 0;
+
+    const score =
+      partial * 30 + // keep old behaviour when only one token is typed
+      coverage * 40 +
+      contigRatio * 25 +
+      lengthAffinity * 5;
+
+    return score;
+  };
 
   function loadImage(id) {
     imageReady = false;
@@ -225,6 +316,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const gardinerCodes = Array.isArray(item?.gardiner_codes)
       ? item.gardiner_codes.map((code) => (code ?? "").toString().trim())
       : [];
+    const lowerCodes = gardinerCodes.map((code) => code.toLowerCase());
+    const lowerCodeString = lowerCodes.join(" ");
     const symbolValues = Array.isArray(item?.symbol_values)
       ? item.symbol_values.map((val) => (val ?? "").toString())
       : [];
@@ -233,6 +326,7 @@ document.addEventListener("DOMContentLoaded", () => {
         item.gardiner_label.trim()) ||
       gardinerCodes.join(" ").trim() ||
       "";
+    const lowerLabel = gardinerLabel.toLowerCase();
     const symbol =
       (typeof item?.symbol === "string" && item.symbol) ||
       symbolValues.join("") ||
@@ -246,7 +340,10 @@ document.addEventListener("DOMContentLoaded", () => {
       length: Number(item?.length) || 0,
       count: Number(item?.count) || 0,
       gardinerCodes,
+      lowerCodes,
+      lowerCodeString,
       gardinerLabel,
+      lowerLabel,
       symbolValues,
       symbol,
       occurrences,
@@ -362,16 +459,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function getFilteredItems() {
     const active = state.activeLength;
-    const term = state.search.toLowerCase();
-    return state.items.filter((item) => {
-      const matchesLength =
-        active === "all" || Number(item.length) === Number(active);
-      const matchesSearch =
-        !term ||
-        item.gardinerLabel.toLowerCase().includes(term) ||
-        item.gardinerCodes.some((code) => code.toLowerCase().includes(term));
-      return matchesLength && matchesSearch;
-    });
+    const tokens = tokenizeSearch(state.search);
+    const withScores = state.items
+      .map((item, index) => {
+        const matchesLength =
+          active === "all" || Number(item.length) === Number(active);
+        if (!matchesLength) return null;
+        const score = computeMatchScore(item, tokens);
+        if (score <= 0) return null;
+        return { item, score, index };
+      })
+      .filter(Boolean);
+
+    if (!tokens.length) {
+      // preserve original order when no search term is provided
+      return withScores.map((entry) => entry.item);
+    }
+
+    return withScores
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        // tie-breaker: higher occurrence count, then original order
+        if (b.item.count !== a.item.count) return b.item.count - a.item.count;
+        return a.index - b.index;
+      })
+      .map((entry) => entry.item);
   }
 
   function updateFilterCount(count) {

@@ -1,6 +1,7 @@
 .archeo/
 __pycache__/
 .DS_Store
+.github/
 .env
 .venv
 .mypy_cache

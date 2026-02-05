@@ -65,11 +65,10 @@ graph TB
         
         subgraph ProcessLayer["Processing Layer"]
             Sort[sort.py<br/>Reading Order]
-            NGram[ngram.py<br/>Pattern Detection]
+            SuffixArr[suffixarray.py<br/>Pattern Detection]
             ProcessImg[process_image.py<br/>JSON Parser]
-            Suffix[suffixtree.py<br/>Suffix Trees]
-            SuffixArr[suffixarray.py<br/>Suffix Arrays]
             Lookup[sentence_lookup_db.py<br/>TLA Corpus Matching]
+            Cleanup[cleanup.py<br/>Data Cleanup]
         end
         
         subgraph DBLayer["Database Layer"]
@@ -89,16 +88,16 @@ graph TB
         GlyphesSorted[(T_GLYPHES_SORTED)]
         Gardiner[(T_GARDINER_CODES)]
         Status[(T_IMAGES_STATUS)]
-        NGramPattern[(T_NGRAM_PATTERN)]
-        NGramOcc[(T_NGRAM_OCCURENCES)]
+        SuffixPattern[(T_SUFFIXARRAY_PATTERNS)]
+        SuffixOcc[(T_SUFFIXARRAY_OCCURENCES)]
         Sentences[(T_SENTENCES)]
         
         Images -->|contains| GlyphesRaw
         Images -->|has status| Status
         Gardiner -->|classifies| GlyphesRaw
-        GlyphesRaw -->|sorted into| GlyphesSorted
-        Images -->|patterns from| NGramPattern
-        NGramPattern -->|occurrences| NGramOcc
+        GlyphesSorted -->|sorted from| GlyphesRaw
+        Images -->|patterns from| SuffixPattern
+        SuffixPattern -->|occurrences| SuffixOcc
     end
 ```
 
@@ -141,10 +140,10 @@ flowchart TD
     
     subgraph Stage4["4. Pattern Detection"]
         Retrieve[Get sequence]
-        NGram[ngram.py<br/>N-Gram Analysis]
-        StorePattern[Store T_NGRAM_PATTERN]
+        SuffixArray[suffixarray.py<br/>Suffix Array Analysis]
+        StorePattern[Store T_SUFFIXARRAY_PATTERNS]
         
-        Retrieve --> NGram --> StorePattern
+        Retrieve --> SuffixArray --> StorePattern
     end
     
     Stage4 --> Stage5
@@ -167,11 +166,11 @@ flowchart TD
 erDiagram
     T_IMAGES ||--o{ T_GLYPHES_RAW : contains
     T_IMAGES ||--|| T_IMAGES_STATUS : "has status"
-    T_IMAGES ||--o{ T_NGRAM_PATTERN : "patterns from"
+    T_IMAGES ||--o{ T_SUFFIXARRAY_PATTERNS : "patterns from"
     T_GARDINER_CODES ||--o{ T_GLYPHES_RAW : classifies
     T_GLYPHES_RAW ||--o| T_GLYPHES_SORTED : "sorted into"
-    T_NGRAM_PATTERN ||--o{ T_NGRAM_OCCURENCES : "has occurrences"
-    T_NGRAM_OCCURENCES ||--o{ T_NGRAM_OCCURENCES_BBOXES : "has bboxes"
+    T_SUFFIXARRAY_PATTERNS ||--o{ T_SUFFIXARRAY_OCCURENCES : "has occurrences"
+    T_SUFFIXARRAY_OCCURENCES ||--o{ T_SUFFIXARRAY_OCCURENCES_BBOXES : "has bboxes"
     
     T_IMAGES {
         int id PK
@@ -215,7 +214,7 @@ erDiagram
         int v_row
     }
     
-    T_NGRAM_PATTERN {
+    T_SUFFIXARRAY_PATTERNS {
         int id PK
         int id_image FK
         int_array gardiner_ids
@@ -223,13 +222,13 @@ erDiagram
         int count
     }
     
-    T_NGRAM_OCCURENCES {
+    T_SUFFIXARRAY_OCCURENCES {
         int id PK
         int id_pattern FK
         int_array glyph_ids
     }
     
-    T_NGRAM_OCCURENCES_BBOXES {
+    T_SUFFIXARRAY_OCCURENCES_BBOXES {
         int id PK
         int id_occ FK
         float bbox_x
@@ -290,7 +289,7 @@ python -m src.process_image 2
 python -m src.sort 2 100
 
 # Detect patterns
-python -m src.ngram
+python -m src.suffixarray 2
 
 # View results at http://localhost:5001/papyri
 ```
@@ -301,12 +300,13 @@ python -m src.ngram
 
 ```
 src/
-├── app/               # Flask web interface
-├── database/          # PostgreSQL layer
-├── process_image.py   # JSON parser
-├── sort.py            # Reading order algorithm
-├── ngram.py           # Pattern detection
-└── visualize_columns.py
+├── app/                    # Flask web interface (routes, static, templates)
+├── database/               # PostgreSQL connection and handlers
+├── process_image.py        # COCO JSON parser
+├── sort.py                 # Reading order algorithm
+├── suffixarray.py          # Suffix array pattern detection
+├── sentence_lookup_db.py   # TLA corpus matching
+└── cleanup.py              # Data cleanup utilities
 ```
 
 ---

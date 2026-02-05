@@ -18,8 +18,8 @@ from .patterns import (
 def _fetch_pattern_row(pattern_id: int):
     rows = select(
         """
-        SELECT id, id_image, gardiner_ids, length, count
-        FROM t_ngram_pattern
+        SELECT id, id_image, gardiner_ids, sequence_length, sequence_count
+        FROM t_suffixarray_patterns
         WHERE id = %s
         """,
         (pattern_id,),

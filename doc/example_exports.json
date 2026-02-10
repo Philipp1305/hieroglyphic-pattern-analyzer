@@ -1,0 +1,56 @@
+{
+  "collection_name": "Religious Formulae - Spell 145",
+  "exported_at": "2026-02-05T14:30:00Z",
+  "filters": {
+    "min_length": 3,
+    "min_frequency": 5
+  },
+  "patterns": [
+    {
+      "pattern_id": "p_892",
+      "unicode_string": "𓋹𓍑𓋴",
+      "unicode_codepoints": ["U+132F9", "U+13351", "U+132F4"],
+      "transliteration": "ꜥnḫ wḏꜢ snb",
+      "tla_translation": "Life, Prosperity, Health",
+      "tla_pos": "phrase (formulaic)",
+      "gardiner_codes": ["S34", "U28", "S29"],
+      "frequency": 12,
+      "user_tags": ["royal_epithet", "formulaic"],
+      "occurrences": [
+        {
+          "occurrence_id": 1,
+          "manuscript_loc": "Column 12, Row 3",
+          "bbox": { "x": 450, "y": 1120, "w": 85, "h": 210 }
+        },
+        {
+          "occurrence_id": 2,
+          "manuscript_loc": "Column 24, Row 8",
+          "bbox": { "x": 980, "y": 1340, "w": 88, "h": 205 }
+        }
+      ]
+    },
+    {
+      "pattern_id": "p_104",
+      "unicode_string": "𓊹𓊹𓊹",
+      "unicode_codepoints": ["U+13219", "U+13219", "U+13219"],
+      "transliteration": "nṯrw",
+      "tla_translation": "Gods",
+      "tla_pos": "substantive (masc. pl.)",
+      "gardiner_codes": ["R8", "R8", "R8"],
+      "frequency": 8,
+      "user_tags": ["divine_plural"],
+      "occurrences": [
+        {
+          "occurrence_id": 101,
+          "manuscript_loc": "Column 5, Row 12",
+          "bbox": { "x": 210, "y": 800, "w": 120, "h": 60 }
+        },
+        {
+          "occurrence_id": 102,
+          "manuscript_loc": "Column 6, Row 2",
+          "bbox": { "x": 260, "y": 850, "w": 115, "h": 65 }
+        }
+      ]
+    }
+  ]
+}
